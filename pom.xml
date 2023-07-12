@@ -108,6 +108,14 @@
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
         </dependency>
+        
+        <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <version>1.18.28</version>
+    <scope>provided</scope>
+</dependency>
 
     </dependencies>
 
@@ -134,7 +142,8 @@
                         <xjbSource>src/main/resources/global.xjb</xjbSource>
                     </xjbSources>-->
             <sources>
-                <source>src/main/resources/icd10cm_tabular.xsd</source>
+            	<source>src/main/resources/icd10cm_index.xsd</source>
+                <!--<source>src/main/resources/icd10cm_drug_neoplasm.xsd</source>-->
             </sources>
             <outputDirectory>${basedir}/src/main/java</outputDirectory>
             <clearOutputDir>false</clearOutputDir>

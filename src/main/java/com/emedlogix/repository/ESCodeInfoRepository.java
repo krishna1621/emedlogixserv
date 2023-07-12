@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ESCodeInfoRepository extends ElasticsearchRepository<CodeInfo, String> {
+public interface ESCodeInfoRepository  {
 
     CodeInfo getByCode(String code);
 

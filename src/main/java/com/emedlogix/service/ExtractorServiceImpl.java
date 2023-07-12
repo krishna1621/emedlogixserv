@@ -1,27 +1,59 @@
 package com.emedlogix.service;
 
-import com.emedlogix.entity.*;
-import com.emedlogix.repository.*;
-import generated.*;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBElement;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ResourceUtils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.*;
+import com.emedlogix.entity.Chapter;
+import com.emedlogix.entity.CodeDetails;
+import com.emedlogix.entity.CodeInfo;
+import com.emedlogix.entity.EIndex;
+import com.emedlogix.entity.Notes;
+import com.emedlogix.entity.Section;
+import com.emedlogix.entity.SectionReference;
+import com.emedlogix.repository.ChapterRepository;
+import com.emedlogix.repository.DBCodeDetailsRepository;
+import com.emedlogix.repository.EIndexRepository;
+import com.emedlogix.repository.NotesRepository;
+import com.emedlogix.repository.SectionRepository;
+
+import generated.ChapterType;
+import generated.ContentType;
+import generated.DiagnosisType;
+import generated.ICD10CMIndex;
+import generated.ICD10CMTabular;
+import generated.NoteType;
+import generated.SectionIndexType;
+import generated.SectionType;
+import generated.Term;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 
 @Service
 public class ExtractorServiceImpl implements ExtractorService {
 
     public static final Logger logger = LoggerFactory.getLogger(ExtractorServiceImpl.class);
-    @Autowired
-    ESCodeInfoRepository esCodeInfoRepository;
+    //@Autowired
+    //ESCodeInfoRepository esCodeInfoRepository;
     @Autowired
     DBCodeDetailsRepository dbCodeDetailsRepository;
     @Autowired
@@ -31,6 +63,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Autowired
     NotesRepository notesRepository;
+    
+    @Autowired
+    EIndexRepository eIndexRepository;
 
     private static List<Section> parseSection(DiagnosisType diagnosisType, String version, String icdRef, String chapterId, List<Section> sections) {
         List<JAXBElement<?>> inclusionTermOrSevenChrNoteOrSevenChrDef = diagnosisType.getInclusionTermOrSevenChrNoteOrSevenChrDef();
@@ -81,7 +116,7 @@ public class ExtractorServiceImpl implements ExtractorService {
         try {
             JAXBContext context = JAXBContext.newInstance(ICD10CMTabular.class);
             ICD10CMTabular tabular = (ICD10CMTabular) context.createUnmarshaller()
-                    .unmarshal(new FileReader(fileStr));
+                    .unmarshal(new FileReader(ResourceUtils.getFile("classpath:icd10cm_tabular_2023.xml")));
             String version = tabular.getVersion().getContent().get(0).toString();
             String icdtitle = tabular.getIntroduction().getIntroSection().get(0).getTitle().getContent().get(0).toString();
             icdtitle = icdtitle.substring(icdtitle.indexOf(" "));
@@ -164,7 +199,7 @@ public class ExtractorServiceImpl implements ExtractorService {
         Map<String, CodeDetails> codeDetailsMap = new HashMap<>();
         Map<String, CodeInfo> codeMap = new HashMap<>();
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(new File(fileStr)));
+            BufferedReader reader = new BufferedReader(new FileReader(ResourceUtils.getFile("classpath:icd10cm_order_2023.txt")));
             String line;
             List<String> lines = new ArrayList<>();
             while ((line = reader.readLine()) != null) {
@@ -189,7 +224,7 @@ public class ExtractorServiceImpl implements ExtractorService {
     private void doSaveCodesToES(Map<String, CodeInfo> codeMap) {
         if (codeMap != null && !codeMap.isEmpty()) {
             logger.info("Total codes extracted {}", codeMap.entrySet().size());
-            esCodeInfoRepository.saveAll(codeMap.values());
+            //esCodeInfoRepository.saveAll(codeMap.values());
         }
         logger.info("Extractor Service Codes completed...");
     }
@@ -264,6 +299,80 @@ public class ExtractorServiceImpl implements ExtractorService {
     private String concateDescription(String previous, String current) {
         return (previous == null ? "" : previous) + " " + current.trim();
     }
+
+	@Override
+	public void doExtractNeoplasm() {		
+		Object obj = parseXML("test_neoplasm.xml", ICD10CMIndex.class);
+		if(obj instanceof ICD10CMIndex) {
+			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
+			icd10CMIndex.getLetter().stream().forEach(l -> {
+				l.getMainTerm().stream().forEach(m -> {					
+					System.out.println("mainterm title ::"+m.getTitle().getContent().get(0).toString());
+					
+					m.getCell().stream().forEach(f -> {
+						f.getContent().stream().forEach( j -> {
+							System.out.println("mainterm cell ::"+j.toString());
+						});
+					});
+					
+					if(!m.getTerm().isEmpty()) {
+						parseNeoPlasmLevelTerm(m.getTerm());
+					}
+				});
+			});
+		}	
+	}
+	
+	public Object parseXML(String fileName, Class className) {
+		try {
+			//File file = ResourceUtils.getFile("classpath:"+fileName);		    
+	        JAXBContext jaxbContext = JAXBContext.newInstance(className);
+
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+
+			return jaxbUnmarshaller.unmarshal(new InputStreamReader(new ClassPathResource("classpath:"+fileName).getInputStream()));
+		} catch (JAXBException | IOException e) {
+			logger.error("doExtractICD10CMCodes error...", e.getMessage(),e.fillInStackTrace());
+		}
+		return new Object();
+	}
+	
+	private void parseNeoPlasmLevelTerm(List<Term> termType) {
+		termType.forEach(a -> {
+			System.out.println("levelterm title :: "+a.getTitle().getContent().get(0).toString());
+			System.out.println("levelterm level :: "+a.getLevel());
+			a.getCell().forEach(c -> {
+				c.getContent().stream().forEach( j -> {
+					System.out.println("levelterm cell ::"+j.toString());
+				});
+			});
+			if(!a.getTerm().isEmpty()) {
+				parseNeoPlasmLevelTerm(a.getTerm());
+			}
+		});
+	}
+
+	@Override
+	public void doExtractIndex() {
+		Object obj = parseXML("icd10cm_eindex_2023.xml",ICD10CMIndex.class);
+		if(obj instanceof ICD10CMIndex) {
+			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
+			List<EIndex> eIndexArray = new ArrayList<>();
+			icd10CMIndex.getLetter().stream().forEach(l -> {
+				l.getMainTerm().stream().forEach(m -> {
+					EIndex eIndex = new EIndex();
+					eIndex.setTitle(m.getTitle().getContent().get(0).toString());
+					eIndex.setCode(m.getCode());
+					eIndex.setSee(m.getSee());
+					eIndex.setSeealso(m.getSeeAlso());
+					eIndex.setSeecat(m.getSeecat());
+					eIndex.setIsmainterm(true);
+					eIndexArray.add(eIndex);				
+				});
+				eIndexRepository.saveAll(eIndexArray);
+			});
+		}
+	}
 }
 
 
