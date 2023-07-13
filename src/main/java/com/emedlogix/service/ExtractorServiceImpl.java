@@ -76,7 +76,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Override
     public void doExtractCapterSectionXML() {
-        String fileStr = "/Users/mnachiappan/Documents/Development/clarit/icd10cm_tabular_2023.xml";
+        String fileStr = "D:\\textfile\\icd10cm_tabular.xml";
         logger.info("Start Extracting Chapter Section from XML file:{}", fileStr);
         try {
             JAXBContext context = JAXBContext.newInstance(ICD10CMTabular.class);
@@ -159,7 +159,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Override
     public void doExtractOrderedCodes() {
-        String fileStr = "/Users/mnachiappan/Documents/Development/clarit/icd10cm_order_2023.txt";
+        String fileStr = "D:\\textfile\\icd10cm_order.txt";
         logger.info("Start Extracting Ordered Codes from file {}", fileStr);
         Map<String, CodeDetails> codeDetailsMap = new HashMap<>();
         Map<String, CodeInfo> codeMap = new HashMap<>();

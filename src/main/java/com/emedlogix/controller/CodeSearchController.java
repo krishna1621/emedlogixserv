@@ -3,10 +3,7 @@ package com.emedlogix.controller;
 
 import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,6 +17,12 @@ public interface CodeSearchController {
     CodeInfo getCodeInfo(@PathVariable String code) throws IOException;
     @GetMapping("/{code}/matches")
     List<CodeInfo> getCodeInfoMatches(@PathVariable String code);
-    @GetMapping("/{code}/details")
-    CodeDetails getCodeInfoDetails(@PathVariable String code);
+    @GetMapping("/{code}/details")                                                                                                                                                                                                                                    
+    CodeDetails getCodeInfoDetails(@PathVariable String code ,@RequestParam String version );
+    @GetMapping("/{description}/description")
+    List<CodeInfo> getCodeInfoDescription(@PathVariable String description);
+
+    @GetMapping("/{searchTerm}/allsearch")
+    List<CodeInfo> getAllInfo(@PathVariable String searchTerm);
+
 }

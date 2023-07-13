@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -57,10 +58,48 @@ public class CodeSearchService implements CodeSearchController {
         return codeInfoList;
     }
 
-    public CodeDetails getCodeInfoDetails(@PathVariable String code){
+    @Override
+    public List<CodeInfo> getCodeInfoDescription(String description) {
+        logger.info("Getting Code information Details for Description:",description);
+        List<CodeInfo> codeInfoList = new ArrayList<>();
+        Iterable<CodeInfo> codeInfoIterable = esCodeInfoRepository.findByDescriptionContains(description);
+        Iterator<CodeInfo> infoIterator = codeInfoIterable.iterator();
+        while (infoIterator.hasNext()){
+            CodeInfo codeInfo = infoIterator.next();
+            codeInfoList.add(codeInfo);
+        }
+        logger.info("Got description size :",codeInfoList.size());
+        return codeInfoList;
+    }
+
+    @Override
+    public List<CodeInfo> getAllInfo(String searchTerm) {
+        List<CodeInfo> codeInfoList = new ArrayList<>();
+
+        Iterable<CodeInfo> codeDetailsIterable = esCodeInfoRepository.findByCodeStartingWith(searchTerm);
+        Iterator<CodeInfo> codeIterator = codeDetailsIterable.iterator();
+        while (codeIterator.hasNext()) {
+            CodeInfo codeInfo = codeIterator.next();
+            codeInfoList.add(codeInfo);
+        }
+
+        Iterable<CodeInfo> descriptionIterable = esCodeInfoRepository.findByDescriptionContains(searchTerm);
+        Iterator<CodeInfo> descriptionIterator = descriptionIterable.iterator();
+        while (descriptionIterator.hasNext()) {
+            CodeInfo codeInfo = descriptionIterator.next();
+            if (!codeInfoList.contains(codeInfo)) {
+                codeInfoList.add(codeInfo);
+            }
+        }
+
+        logger.info("Got matching results size: " + codeInfoList.size());
+        return codeInfoList;
+    }
+
+    public CodeDetails getCodeInfoDetails(@PathVariable String code, @RequestParam String version){
         logger.info("Getting Code Information Details for code:", code);
         CodeDetails codeDetails = dbCodeDetailsRepository.findByCode(code);
-        Section section = sectionRepository.findByCode(code);
+        Section section = sectionRepository.findByCodeAndVersion(code,version);
         if(section != null) {
             codeDetails.setSection(section);
             chapterRepository.findById(section.getChapterId()).ifPresent(value -> {
@@ -70,4 +109,6 @@ public class CodeSearchService implements CodeSearchController {
         //codeDetails.setChapter(.get());
         return codeDetails;
     }
+
+
 }
