@@ -41,16 +41,16 @@ import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.NotesRepository;
 import com.emedlogix.repository.SectionRepository;
 
-import generated.ChapterType;
-import generated.ContentType;
-import generated.DiagnosisType;
-import generated.ICD10CMIndex;
-import generated.ICD10CMTabular;
-import generated.MainTerm;
-import generated.NoteType;
-import generated.SectionIndexType;
-import generated.SectionType;
-import generated.Term;
+import com.emedlogix.codes.ChapterType;
+import com.emedlogix.codes.ContentType;
+import com.emedlogix.codes.DiagnosisType;
+import com.emedlogix.index.ICD10CMIndex;
+import com.emedlogix.codes.ICD10CMTabular;
+import com.emedlogix.index.MainTerm;
+import com.emedlogix.codes.NoteType;
+import com.emedlogix.codes.SectionIndexType;
+import com.emedlogix.codes.SectionType;
+import com.emedlogix.index.Term;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
@@ -363,7 +363,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
 
-			return jaxbUnmarshaller.unmarshal(new InputStreamReader(new ClassPathResource("classpath:"+fileName).getInputStream()));
+			return jaxbUnmarshaller.unmarshal(new InputStreamReader(new ClassPathResource(fileName).getInputStream()));
 		} catch (JAXBException | IOException e) {
 			logger.error("doExtractICD10CMCodes error...", e.getMessage(),e.fillInStackTrace());
 		}

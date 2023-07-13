@@ -32,7 +32,7 @@ public class EmedlogixServApplication {
     @Bean(destroyMethod = "close")
     public RestHighLevelClient restClient() {
 
-        RestClientBuilder builder = RestClient.builder(new HttpHost("192.168.199.238", 9200, "http"))
+        RestClientBuilder builder = RestClient.builder(new HttpHost("localhost", 9200, "http"))
                 // .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
                 .setDefaultHeaders(compatibilityHeaders());
         return new RestHighLevelClient(builder);

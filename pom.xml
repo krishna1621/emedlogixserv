@@ -142,30 +142,33 @@
                         <xjbSource>src/main/resources/global.xjb</xjbSource>
                     </xjbSources>-->
             <sources>
-            	<source>src/main/resources/icd10cm_index.xsd</source>
-                <!--<source>src/main/resources/icd10cm_drug_neoplasm.xsd</source>-->
-            </sources>
-            <outputDirectory>${basedir}/src/main/java</outputDirectory>
-            <clearOutputDir>false</clearOutputDir>
-        </configuration>
-    </plugin>
-        </plugins>
+                <source>src/main/resources/icd10cm_drug_neoplasm.xsd</source>
+                <!--
+                <source>src/main/resources/icd10cm_tabular.xsd</source>
+                <source>src/main/resources/icd10cm_index.xsd</source>-->
+             </sources>
+             <outputDirectory>${basedir}/src/main/java</outputDirectory>
+             <clearOutputDir>false</clearOutputDir>
+                     <packageName>com.emedlogix.drug</packageName>
+         </configuration>
+     </plugin>
+         </plugins>
 
-    </build>
+     </build>
 
-    <repositories>
-        <repository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-        </pluginRepository>
-    </pluginRepositories>
+     <repositories>
+         <repository>
+             <id>spring-milestones</id>
+             <name>Spring Milestones</name>
+             <url>https://repo.spring.io/milestone</url>
+         </repository>
+     </repositories>
+     <pluginRepositories>
+         <pluginRepository>
+             <id>spring-milestones</id>
+             <name>Spring Milestones</name>
+             <url>https://repo.spring.io/milestone</url>
+         </pluginRepository>
+     </pluginRepositories>
 
-</project>
+ </project>

@@ -7,12 +7,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.List;
 
+import com.emedlogix.index.ICD10CMIndex;
+import com.emedlogix.index.Term;
 import org.springframework.util.ResourceUtils;
 
-import generated.ICD10CMIndex;
-import generated.Term;
 import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 
