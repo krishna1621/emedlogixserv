@@ -13,6 +13,8 @@ import com.emedlogix.entity.Neoplasm;
 @Repository
 public interface NeoPlasmRepository extends JpaRepository<Neoplasm, Integer> {
 
-	@Query("SELECT n.id as id ,n.title as title,n.see as see,n.seealso as seealso,n.ismainterm as ismainterm,c.code as code FROM neoplasm n join neoplasm_code c on n.id=c.neoplasm_id WHERE c.code = :code")
+	@Query(value = "SELECT n.id as id ,n.title as title,n.see as see,n.seealso as seealso,n.ismainterm as ismainterm,GROUP_CONCAT(c.code) as code "
+			+ "FROM neoplasm n join neoplasm_code c on n.id=c.neoplasm_id "
+			+ "WHERE c.neoplasm_id in (select neoplasm_id from neoplasm_code where  code= :code) group by n.id", nativeQuery = true)
 	List<Map<String,Object>> findNeoplasmByCode(String code);
 }
