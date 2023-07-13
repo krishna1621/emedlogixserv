@@ -12,6 +12,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.UUID;
 
+import com.emedlogix.codes.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,15 +42,8 @@ import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.NotesRepository;
 import com.emedlogix.repository.SectionRepository;
 
-import com.emedlogix.codes.ChapterType;
-import com.emedlogix.codes.ContentType;
-import com.emedlogix.codes.DiagnosisType;
 import com.emedlogix.index.ICD10CMIndex;
-import com.emedlogix.codes.ICD10CMTabular;
 import com.emedlogix.index.MainTerm;
-import com.emedlogix.codes.NoteType;
-import com.emedlogix.codes.SectionIndexType;
-import com.emedlogix.codes.SectionType;
 import com.emedlogix.index.Term;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
@@ -102,6 +96,11 @@ public class ExtractorServiceImpl implements ExtractorService {
                 if (inclusionTermOrSevenChrNoteOrSevenChrDef.get(i).getValue() instanceof DiagnosisType) {
                     parseSection((DiagnosisType) inclusionTermOrSevenChrNoteOrSevenChrDef.get(i).getValue(), version, icdRef, chapterId, sections);
                 }
+                if(inclusionTermOrSevenChrNoteOrSevenChrDef.get(i).getValue() instanceof VisualImpairmentType) {
+                    logger.info("It is present......!!!!");
+                    VisualImpairmentType visualImpairmentType = (VisualImpairmentType) inclusionTermOrSevenChrNoteOrSevenChrDef.get(i).getValue();
+
+                }
             }
         }
         return sections;
@@ -135,7 +134,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Override
     public void doExtractCapterSectionXML() {
-        String fileStr = "/Users/mnachiappan/Documents/Development/clarit/icd10cm_tabular_2023.xml";
+        String fileStr = "icd10cm_tabular_2023.xml";
         logger.info("Start Extracting Chapter Section from XML file:{}", fileStr);
         try {
             JAXBContext context = JAXBContext.newInstance(ICD10CMTabular.class);
@@ -218,7 +217,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Override
     public void doExtractOrderedCodes() {
-        String fileStr = "/Users/mnachiappan/Documents/Development/clarit/icd10cm_order_2023.txt";
+        String fileStr = "icd10cm_order_2023.txt";
         logger.info("Start Extracting Ordered Codes from file {}", fileStr);
         Map<String, CodeDetails> codeDetailsMap = new HashMap<>();
         Map<String, CodeInfo> codeMap = new HashMap<>();
@@ -325,12 +324,12 @@ public class ExtractorServiceImpl implements ExtractorService {
     }
 
 	@Override
-	public void doExtractNeoplasm() {		
+	public void doExtractNeoplasm() {
 		Object obj = parseXML("icd10cm_neoplasm_2023.xml", ICD10CMIndex.class);
 		if(obj instanceof ICD10CMIndex) {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
 			icd10CMIndex.getLetter().stream().forEach(l -> {
-				l.getMainTerm().stream().forEach(m -> {					
+				l.getMainTerm().stream().forEach(m -> {
 					final Neoplasm neoplasmOne = populateNeoPlasmMainTerm(m);
 					List<NeoPlasmCode> neoplasmCodes = new ArrayList<>();
 					m.getCell().stream().forEach(cell -> {
@@ -339,13 +338,13 @@ public class ExtractorServiceImpl implements ExtractorService {
 						});
 					});
 					neoPlasmCodeRepository.saveAll(neoplasmCodes);
-					
+
 					if(!m.getTerm().isEmpty()) {
 						parseNeoPlasmLevelTerm(m.getTerm());
 					}
 				});
 			});
-		}	
+		}
 	}
 
 	private Neoplasm populateNeoPlasmMainTerm(MainTerm m) {
@@ -356,7 +355,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		neoplasm.setIsmainterm(true);
 		return neoPlasmRepository.save(neoplasm);
 	}
-	
+
 	public Object parseXML(String fileName, Class<?> className) {
 		try {
 	        JAXBContext jaxbContext = JAXBContext.newInstance(className);
@@ -369,7 +368,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		}
 		return new Object();
 	}
-	
+
 	private void parseNeoPlasmLevelTerm(List<Term> termType) {
 		termType.forEach(a -> {
 			Neoplasm neoplasm = populateNeoPlasmLavelTerm(a);
@@ -411,7 +410,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 			List<EIndex> eIndexArray = new ArrayList<>();
 			icd10CMIndex.getLetter().stream().forEach(l -> {
 				l.getMainTerm().stream().forEach(m -> {
-					populateEIndexCode(eIndexArray, m);				
+					populateEIndexCode(eIndexArray, m);
 				});
 				eIndexRepository.saveAll(eIndexArray);
 			});
@@ -435,7 +434,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		if(obj instanceof ICD10CMIndex) {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
 			icd10CMIndex.getLetter().stream().forEach(l -> {
-				l.getMainTerm().stream().forEach(m -> {					
+				l.getMainTerm().stream().forEach(m -> {
 					final Drug drugResult = populateDrugMainTerm(m);
 					List<DrugCode> drugCodes = new ArrayList<>();
 					m.getCell().stream().forEach(cell -> {
@@ -444,7 +443,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 						});
 					});
 					drugCodeRepository.saveAll(drugCodes);
-					
+
 					if(!m.getTerm().isEmpty()) {
 						parseDrugLevelTerm(m.getTerm());
 					}
@@ -452,7 +451,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 			});
 		}
 	}
-	
+
 	private Drug populateDrugMainTerm(MainTerm m) {
 		Drug drug = new Drug();
 		drug.setTitle(m.getTitle().getContent().get(0).toString());
@@ -461,14 +460,14 @@ public class ExtractorServiceImpl implements ExtractorService {
 		drug.setIsmainterm(true);
 		return drugRepository.save(drug);
 	}
-	
+
 	private void populateDrugCode(final Drug drug, List<DrugCode> drugCodes, Object code) {
 		DrugCode drugCode = new DrugCode();
 		drugCode.setDrug_id(drug.getId());
 		drugCode.setCode(code.toString());
 		drugCodes.add(drugCode);
 	}
-	
+
 	private void parseDrugLevelTerm(List<Term> termType) {
 		termType.forEach(a -> {
 			Drug drug = populateDrugLevelTerm(a);
@@ -485,7 +484,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 			}
 		});
 	}
-	
+
 	private Drug populateDrugLevelTerm(Term a) {
 		Drug drug = new Drug();
 		drug.setTitle(a.getTitle().getContent().get(0).toString());
