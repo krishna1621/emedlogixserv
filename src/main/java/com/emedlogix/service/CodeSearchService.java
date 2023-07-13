@@ -21,6 +21,7 @@ import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
 import com.emedlogix.repository.DrugRepository;
 import com.emedlogix.repository.EIndexRepository;
+import com.emedlogix.repository.ESCodeInfoRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.SectionRepository;
 
@@ -32,8 +33,8 @@ public class CodeSearchService implements CodeSearchController {
     private static final String INDEX_NAME = "details";
     private static final String FIELD_NAME = "code";
 
-    //@Autowired
-    //ESCodeInfoRepository esCodeInfoRepository;
+    @Autowired
+    ESCodeInfoRepository esCodeInfoRepository;
 
     @Autowired
     DBCodeDetailsRepository dbCodeDetailsRepository;
@@ -54,14 +55,14 @@ public class CodeSearchService implements CodeSearchController {
     @Override
     public CodeInfo getCodeInfo(String code) {
         logger.info("Getting Code Information for:", code);
-        CodeInfo codeInfo = null;//esCodeInfoRepository.getByCode(code);
+        CodeInfo codeInfo = esCodeInfoRepository.getByCode(code);
         return codeInfo;
     }
 
     public List<CodeInfo> getCodeInfoMatches(String code) {
         logger.info("Getting Code Information for code starts with:", code);
         List<CodeInfo> codeInfoList = new ArrayList<>();
-        Iterable<CodeInfo> codeDetailsIterable = null;//esCodeInfoRepository.findByCodeStartingWith(code);
+        Iterable<CodeInfo> codeDetailsIterable = esCodeInfoRepository.findByCodeStartingWith(code);
         Iterator<CodeInfo> it = codeDetailsIterable.iterator();
         while (it.hasNext()) {
             CodeInfo codeInfo = it.next();

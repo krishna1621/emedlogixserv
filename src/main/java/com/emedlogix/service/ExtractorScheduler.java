@@ -37,14 +37,14 @@ public class ExtractorScheduler {
     @PostConstruct
     public void doExtractNeoplasm() {
         logger.info("Extractor Service has been initiated for Neoplasm Codes...");
-        extractorService.doExtractNeoplasm();
+        //extractorService.doExtractNeoplasm();
         logger.info("Extractor Service Neoplasm Codes completed...");
     }
     
     @PostConstruct
     public void doExtractDrug() {
         logger.info("Extractor Service has been initiated for Drug Codes...");
-        extractorService.doExtractDrug();
+        //extractorService.doExtractDrug();
         logger.info("Extractor Service Drug Codes completed...");
     }
 }

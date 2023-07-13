@@ -1,0 +1,44 @@
+CREATE TABLE eindex (
+    id int NOT NULL AUTO_INCREMENT,
+    title varchar(255) NOT NULL,
+    code varchar(255),
+    see varchar(255),
+    seealso varchar(255),
+    seecat varchar(255),
+    ismainterm boolean default true,
+    PRIMARY KEY (id)
+); 
+
+CREATE TABLE neoplasm (
+    id int NOT NULL AUTO_INCREMENT,
+    title varchar(255) NOT NULL,
+    see varchar(255),
+    seealso varchar(255),
+    ismainterm boolean default true,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE neoplasm_code (
+    id int NOT NULL AUTO_INCREMENT,
+    neoplasm_id int NOT NULL,
+    code varchar(255),
+    PRIMARY KEY (id),
+    FOREIGN KEY (neoplasm_id) REFERENCES neoplasm(id)
+);
+
+CREATE TABLE drug (
+    id int NOT NULL AUTO_INCREMENT,
+    title varchar(255) NOT NULL,
+    see varchar(255),
+    seealso varchar(255),
+    ismainterm boolean default true,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE drug_code (
+    id int NOT NULL AUTO_INCREMENT,
+    drug_id int NOT NULL,
+    code varchar(255),
+    PRIMARY KEY (id),
+    FOREIGN KEY (drug_id) REFERENCES drug(id)
+);

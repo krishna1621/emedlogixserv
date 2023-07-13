@@ -35,6 +35,7 @@ import com.emedlogix.repository.DBCodeDetailsRepository;
 import com.emedlogix.repository.DrugCodeRepository;
 import com.emedlogix.repository.DrugRepository;
 import com.emedlogix.repository.EIndexRepository;
+import com.emedlogix.repository.ESCodeInfoRepository;
 import com.emedlogix.repository.NeoPlasmCodeRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.NotesRepository;
@@ -59,12 +60,16 @@ import jakarta.xml.bind.Unmarshaller;
 public class ExtractorServiceImpl implements ExtractorService {
 
     public static final Logger logger = LoggerFactory.getLogger(ExtractorServiceImpl.class);
-    //@Autowired
-    //ESCodeInfoRepository esCodeInfoRepository;
+    
+    @Autowired
+    ESCodeInfoRepository esCodeInfoRepository;
+    
     @Autowired
     DBCodeDetailsRepository dbCodeDetailsRepository;
+    
     @Autowired
     SectionRepository sectionRepository;
+    
     @Autowired
     ChapterRepository chapterRepository;
 
@@ -243,7 +248,7 @@ public class ExtractorServiceImpl implements ExtractorService {
     private void doSaveCodesToES(Map<String, CodeInfo> codeMap) {
         if (codeMap != null && !codeMap.isEmpty()) {
             logger.info("Total codes extracted {}", codeMap.entrySet().size());
-            //esCodeInfoRepository.saveAll(codeMap.values());
+            esCodeInfoRepository.saveAll(codeMap.values());
         }
         logger.info("Extractor Service Codes completed...");
     }

@@ -1,15 +1,15 @@
 package com.emedlogix.repository;
 
 
-import com.emedlogix.entity.CodeInfo;
-import org.springframework.data.elasticsearch.annotations.Query;
+import java.util.List;
+
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.emedlogix.entity.CodeInfo;
 
 @Repository
-public interface ESCodeInfoRepository  {
+public interface ESCodeInfoRepository extends ElasticsearchRepository<CodeInfo, String>  {
 
     CodeInfo getByCode(String code);
 

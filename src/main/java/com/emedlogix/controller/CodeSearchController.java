@@ -31,5 +31,5 @@ public interface CodeSearchController {
     @GetMapping("/{code}/neoplasm")
     List<Map<String,Object>> getNeoPlasm(@PathVariable String code);
     @GetMapping("/{code}/drug")
-	List<Map<String, Object>> getDrug(String code);
+	List<Map<String, Object>> getDrug(@PathVariable String code);
 }
