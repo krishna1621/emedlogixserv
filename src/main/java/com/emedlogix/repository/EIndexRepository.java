@@ -11,6 +11,6 @@ import com.emedlogix.entity.EIndex;
 @Repository
 public interface EIndexRepository extends JpaRepository<EIndex, Integer> {
 
-	@Query("SELECT e FROM eindex e WHERE e.code = :code and e.title like %:title%")
+	@Query("SELECT e FROM eindex e WHERE e.code = :code and e.title like :title%")
 	List<EIndex> findMainTermBySearch(String code,String title);
 }
