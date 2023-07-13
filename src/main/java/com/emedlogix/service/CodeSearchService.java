@@ -4,6 +4,7 @@ package com.emedlogix.service;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,9 @@ import com.emedlogix.entity.EIndex;
 import com.emedlogix.entity.Section;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
+import com.emedlogix.repository.DrugRepository;
 import com.emedlogix.repository.EIndexRepository;
+import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.SectionRepository;
 
 
@@ -41,6 +44,12 @@ public class CodeSearchService implements CodeSearchController {
     
     @Autowired
     EIndexRepository eIndexRepository;
+    
+    @Autowired
+    NeoPlasmRepository neoPlasmRepository;
+    
+    @Autowired
+    DrugRepository drugRepository;
 
     @Override
     public CodeInfo getCodeInfo(String code) {
@@ -78,7 +87,16 @@ public class CodeSearchService implements CodeSearchController {
 
 	@Override
 	public List<EIndex> getEIndex(String code, String filterBy) {
-		System.out.println("code : "+code+" filterBy : "+filterBy);
 		return eIndexRepository.findMainTermBySearch(code,filterBy);
+	}
+
+	@Override
+	public List<Map<String,Object>> getNeoPlasm(String code) {
+		return neoPlasmRepository.findNeoplasmByCode(code);
+	}
+	
+	@Override
+	public List<Map<String,Object>> getDrug(String code) {
+		return drugRepository.findDrugByCode(code);
 	}
 }

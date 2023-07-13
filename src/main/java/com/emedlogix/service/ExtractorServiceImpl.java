@@ -1,8 +1,6 @@
 package com.emedlogix.service;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -24,13 +22,21 @@ import org.springframework.util.ResourceUtils;
 import com.emedlogix.entity.Chapter;
 import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
+import com.emedlogix.entity.Drug;
+import com.emedlogix.entity.DrugCode;
 import com.emedlogix.entity.EIndex;
+import com.emedlogix.entity.NeoPlasmCode;
+import com.emedlogix.entity.Neoplasm;
 import com.emedlogix.entity.Notes;
 import com.emedlogix.entity.Section;
 import com.emedlogix.entity.SectionReference;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
+import com.emedlogix.repository.DrugCodeRepository;
+import com.emedlogix.repository.DrugRepository;
 import com.emedlogix.repository.EIndexRepository;
+import com.emedlogix.repository.NeoPlasmCodeRepository;
+import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.NotesRepository;
 import com.emedlogix.repository.SectionRepository;
 
@@ -39,6 +45,7 @@ import generated.ContentType;
 import generated.DiagnosisType;
 import generated.ICD10CMIndex;
 import generated.ICD10CMTabular;
+import generated.MainTerm;
 import generated.NoteType;
 import generated.SectionIndexType;
 import generated.SectionType;
@@ -66,6 +73,18 @@ public class ExtractorServiceImpl implements ExtractorService {
     
     @Autowired
     EIndexRepository eIndexRepository;
+    
+    @Autowired
+    NeoPlasmRepository neoPlasmRepository;
+    
+    @Autowired
+    NeoPlasmCodeRepository neoPlasmCodeRepository;
+    
+    @Autowired
+    DrugRepository drugRepository;
+    
+    @Autowired
+    DrugCodeRepository drugCodeRepository;
 
     private static List<Section> parseSection(DiagnosisType diagnosisType, String version, String icdRef, String chapterId, List<Section> sections) {
         List<JAXBElement<?>> inclusionTermOrSevenChrNoteOrSevenChrDef = diagnosisType.getInclusionTermOrSevenChrNoteOrSevenChrDef();
@@ -302,18 +321,19 @@ public class ExtractorServiceImpl implements ExtractorService {
 
 	@Override
 	public void doExtractNeoplasm() {		
-		Object obj = parseXML("test_neoplasm.xml", ICD10CMIndex.class);
+		Object obj = parseXML("icd10cm_neoplasm_2023.xml", ICD10CMIndex.class);
 		if(obj instanceof ICD10CMIndex) {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
 			icd10CMIndex.getLetter().stream().forEach(l -> {
 				l.getMainTerm().stream().forEach(m -> {					
-					System.out.println("mainterm title ::"+m.getTitle().getContent().get(0).toString());
-					
-					m.getCell().stream().forEach(f -> {
-						f.getContent().stream().forEach( j -> {
-							System.out.println("mainterm cell ::"+j.toString());
+					final Neoplasm neoplasmOne = populateNeoPlasmMainTerm(m);
+					List<NeoPlasmCode> neoplasmCodes = new ArrayList<>();
+					m.getCell().stream().forEach(cell -> {
+						cell.getContent().stream().forEach( code -> {
+							populateNeoPlasmCode(neoplasmOne, neoplasmCodes, code);
 						});
 					});
+					neoPlasmCodeRepository.saveAll(neoplasmCodes);
 					
 					if(!m.getTerm().isEmpty()) {
 						parseNeoPlasmLevelTerm(m.getTerm());
@@ -322,10 +342,18 @@ public class ExtractorServiceImpl implements ExtractorService {
 			});
 		}	
 	}
+
+	private Neoplasm populateNeoPlasmMainTerm(MainTerm m) {
+		Neoplasm neoplasm = new Neoplasm();
+		neoplasm.setTitle(m.getTitle().getContent().get(0).toString());
+		neoplasm.setSee(m.getSee());
+		neoplasm.setSeealso(m.getSeeAlso());
+		neoplasm.setIsmainterm(true);
+		return neoPlasmRepository.save(neoplasm);
+	}
 	
-	public Object parseXML(String fileName, Class className) {
+	public Object parseXML(String fileName, Class<?> className) {
 		try {
-			//File file = ResourceUtils.getFile("classpath:"+fileName);		    
 	        JAXBContext jaxbContext = JAXBContext.newInstance(className);
 
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
@@ -339,17 +367,35 @@ public class ExtractorServiceImpl implements ExtractorService {
 	
 	private void parseNeoPlasmLevelTerm(List<Term> termType) {
 		termType.forEach(a -> {
-			System.out.println("levelterm title :: "+a.getTitle().getContent().get(0).toString());
-			System.out.println("levelterm level :: "+a.getLevel());
+			Neoplasm neoplasm = populateNeoPlasmLavelTerm(a);
+			final Neoplasm neoplasmOne = neoPlasmRepository.save(neoplasm);
+			List<NeoPlasmCode> neoplasmCodes = new ArrayList<>();
 			a.getCell().forEach(c -> {
 				c.getContent().stream().forEach( j -> {
-					System.out.println("levelterm cell ::"+j.toString());
+					populateNeoPlasmCode(neoplasmOne, neoplasmCodes, j);
 				});
 			});
+			neoPlasmCodeRepository.saveAll(neoplasmCodes);
 			if(!a.getTerm().isEmpty()) {
 				parseNeoPlasmLevelTerm(a.getTerm());
 			}
 		});
+	}
+
+	private void populateNeoPlasmCode(final Neoplasm neoplasmOne, List<NeoPlasmCode> neoplasmCodes, Object j) {
+		NeoPlasmCode neoPlasmCode = new NeoPlasmCode();
+		neoPlasmCode.setNeoplasm_id(neoplasmOne.getId());
+		neoPlasmCode.setCode(j.toString());
+		neoplasmCodes.add(neoPlasmCode);
+	}
+
+	private Neoplasm populateNeoPlasmLavelTerm(Term a) {
+		Neoplasm neoplasm = new Neoplasm();
+		neoplasm.setTitle(a.getTitle().getContent().get(0).toString());
+		neoplasm.setSee(a.getSee());
+		neoplasm.setSeealso(a.getSeeAlso());
+		neoplasm.setIsmainterm(false);
+		return neoplasm;
 	}
 
 	@Override
@@ -360,18 +406,88 @@ public class ExtractorServiceImpl implements ExtractorService {
 			List<EIndex> eIndexArray = new ArrayList<>();
 			icd10CMIndex.getLetter().stream().forEach(l -> {
 				l.getMainTerm().stream().forEach(m -> {
-					EIndex eIndex = new EIndex();
-					eIndex.setTitle(m.getTitle().getContent().get(0).toString());
-					eIndex.setCode(m.getCode());
-					eIndex.setSee(m.getSee());
-					eIndex.setSeealso(m.getSeeAlso());
-					eIndex.setSeecat(m.getSeecat());
-					eIndex.setIsmainterm(true);
-					eIndexArray.add(eIndex);				
+					populateEIndexCode(eIndexArray, m);				
 				});
 				eIndexRepository.saveAll(eIndexArray);
 			});
 		}
+	}
+
+	private void populateEIndexCode(List<EIndex> eIndexArray, MainTerm m) {
+		EIndex eIndex = new EIndex();
+		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
+		eIndex.setCode(m.getCode());
+		eIndex.setSee(m.getSee());
+		eIndex.setSeealso(m.getSeeAlso());
+		eIndex.setSeecat(m.getSeecat());
+		eIndex.setIsmainterm(true);
+		eIndexArray.add(eIndex);
+	}
+
+	@Override
+	public void doExtractDrug() {
+		Object obj = parseXML("icd10cm_drug_2023.xml", ICD10CMIndex.class);
+		if(obj instanceof ICD10CMIndex) {
+			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
+			icd10CMIndex.getLetter().stream().forEach(l -> {
+				l.getMainTerm().stream().forEach(m -> {					
+					final Drug drugResult = populateDrugMainTerm(m);
+					List<DrugCode> drugCodes = new ArrayList<>();
+					m.getCell().stream().forEach(cell -> {
+						cell.getContent().stream().forEach( code -> {
+							populateDrugCode(drugResult, drugCodes, code);
+						});
+					});
+					drugCodeRepository.saveAll(drugCodes);
+					
+					if(!m.getTerm().isEmpty()) {
+						parseDrugLevelTerm(m.getTerm());
+					}
+				});
+			});
+		}
+	}
+	
+	private Drug populateDrugMainTerm(MainTerm m) {
+		Drug drug = new Drug();
+		drug.setTitle(m.getTitle().getContent().get(0).toString());
+		drug.setSee(m.getSee());
+		drug.setSeealso(m.getSeeAlso());
+		drug.setIsmainterm(true);
+		return drugRepository.save(drug);
+	}
+	
+	private void populateDrugCode(final Drug drug, List<DrugCode> drugCodes, Object code) {
+		DrugCode drugCode = new DrugCode();
+		drugCode.setDrug_id(drug.getId());
+		drugCode.setCode(code.toString());
+		drugCodes.add(drugCode);
+	}
+	
+	private void parseDrugLevelTerm(List<Term> termType) {
+		termType.forEach(a -> {
+			Drug drug = populateDrugLevelTerm(a);
+			final Drug drugResult = drugRepository.save(drug);
+			List<DrugCode> drugCodes = new ArrayList<>();
+			a.getCell().forEach(c -> {
+				c.getContent().stream().forEach( j -> {
+					populateDrugCode(drugResult, drugCodes, j);
+				});
+			});
+			drugCodeRepository.saveAll(drugCodes);
+			if(!a.getTerm().isEmpty()) {
+				parseNeoPlasmLevelTerm(a.getTerm());
+			}
+		});
+	}
+	
+	private Drug populateDrugLevelTerm(Term a) {
+		Drug drug = new Drug();
+		drug.setTitle(a.getTitle().getContent().get(0).toString());
+		drug.setSee(a.getSee());
+		drug.setSeealso(a.getSeeAlso());
+		drug.setIsmainterm(false);
+		return drug;
 	}
 }
 

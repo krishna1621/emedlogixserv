@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import com.emedlogix.entity.EIndex;
 
 @Repository
-public interface EIndexRepository extends JpaRepository<EIndex, String> {
+public interface EIndexRepository extends JpaRepository<EIndex, Integer> {
 
 	@Query("SELECT e FROM eindex e WHERE e.code = :code and e.title like %:title%")
 	List<EIndex> findMainTermBySearch(String code,String title);
