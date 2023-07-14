@@ -4,15 +4,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import com.emedlogix.codes.*;
+import com.emedlogix.entity.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.sun.org.apache.xerces.internal.dom.ElementNSImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,17 +19,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ResourceUtils;
 
-import com.emedlogix.entity.Chapter;
-import com.emedlogix.entity.CodeDetails;
-import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.Drug;
-import com.emedlogix.entity.DrugCode;
-import com.emedlogix.entity.EIndex;
-import com.emedlogix.entity.NeoPlasmCode;
-import com.emedlogix.entity.Neoplasm;
-import com.emedlogix.entity.Notes;
-import com.emedlogix.entity.Section;
-import com.emedlogix.entity.SectionReference;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
 import com.emedlogix.repository.DrugCodeRepository;
@@ -85,7 +73,7 @@ public class ExtractorServiceImpl implements ExtractorService {
     @Autowired
     DrugCodeRepository drugCodeRepository;
 
-    private static List<Section> parseSection(DiagnosisType diagnosisType, String version, String icdRef, String chapterId, List<Section> sections) {
+    private List<Section> parseSection(DiagnosisType diagnosisType, String version, String icdRef, String chapterId, List<Section> sections) throws JsonProcessingException {
         List<JAXBElement<?>> inclusionTermOrSevenChrNoteOrSevenChrDef = diagnosisType.getInclusionTermOrSevenChrNoteOrSevenChrDef();
         for (int i = 0; i < inclusionTermOrSevenChrNoteOrSevenChrDef.size(); i++) {
             if (inclusionTermOrSevenChrNoteOrSevenChrDef.get(i).getValue() instanceof NoteType) {
@@ -97,18 +85,43 @@ public class ExtractorServiceImpl implements ExtractorService {
                     parseSection((DiagnosisType) inclusionTermOrSevenChrNoteOrSevenChrDef.get(i).getValue(), version, icdRef, chapterId, sections);
                 }
                 if(inclusionTermOrSevenChrNoteOrSevenChrDef.get(i).getValue() instanceof VisualImpairmentType) {
-                    logger.info("It is present......!!!!");
                     VisualImpairmentType visualImpairmentType = (VisualImpairmentType) inclusionTermOrSevenChrNoteOrSevenChrDef.get(i).getValue();
+                    VisualImpairment visualImpairment = new VisualImpairment();
+                    visualImpairmentType.getVisCategory().stream().forEach(
+                            visCategory -> {
+                                if(visCategory.getHeading() != null)visualImpairment.setCategoryHeading(
+                                        ((ElementNSImpl) visCategory.getHeading()).getFirstChild().getNodeValue());
+                                Category category = new Category();
+                                visualImpairment.getCategoriesList().add(category);
+                                if(visCategory.getValue() != null)category.setValue(((ElementNSImpl) visCategory.getValue()).getFirstChild().getNodeValue());
+                                if(visCategory.getHeading() != null)visualImpairment.setCategoryHeading(((ElementNSImpl) visCategory.getHeading()).getFirstChild().getNodeValue());
+                                visCategory.getVisRange().stream().forEach(visRange -> populateVisRange(visualImpairment, category, visRange));
 
+                            }
+                    );
+                    ObjectWriter ow = new ObjectMapper().writer();
+                    String json = ow.writeValueAsString(visualImpairment);
+                    logger.info("JSON : {}", json);
+                    sections.get(sections.size()-1).setVisImpair(json);
                 }
             }
         }
         return sections;
     }
 
-    private static Section parseItems(NoteType noteTypeVaule, String version, String icdRef, String chapterId, String code, String classification) {
+    private void populateVisRange(VisualImpairment visualImpairment, Category category, VisualImpairmentType.VisCategory.VisRange visRange){
+        if(visRange.getHeading() != null)visualImpairment.setRangeHeading(((ElementNSImpl) visRange.getHeading()).getFirstChild().getNodeValue());
+        if(visRange.getVisMin()!= null && visRange.getVisMin().getHeading() != null)visualImpairment.setMinHeading(((ElementNSImpl) visRange.getVisMin().getHeading()).getFirstChild().getNodeValue());
+        if(visRange.getVisMax() != null && visRange.getVisMax().getHeading() != null)visualImpairment.setMaxHeading(((ElementNSImpl) visRange.getVisMax().getHeading()).getFirstChild().getNodeValue());
+        VisRange range = new VisRange();
+        if(visRange.getVisMax() != null && visRange.getVisMax().getValue() != null) range.setMax(((ElementNSImpl) visRange.getVisMax().getValue()).getFirstChild().getNodeValue());
+        if(visRange.getVisMin() != null && visRange.getVisMin().getValue() != null) range.setMin(((ElementNSImpl) visRange.getVisMin().getValue()).getFirstChild().getNodeValue());
+        category.getVisRangeList().add(range);
+    }
+
+    private Section parseItems(NoteType noteTypeVaule, String version, String icdRef, String chapterId, String code, String classification) {
         Section section = new Section();
-        section.setCode(code.replace(".", ""));
+        section.setCode(replaceDot(code));
         section.setVersion(version);
         section.setChapterId(chapterId);
         section.setIcdReference(icdRef);
@@ -175,7 +188,7 @@ public class ExtractorServiceImpl implements ExtractorService {
                             }
                         }
                     } else if (element.getValue() instanceof SectionType) {
-                        List<Section> sections = new ArrayList<>();
+                        List<Section> sections = new LinkedList<>();
                         String sectionRefId = ((SectionType) element.getValue()).getId();
                         SectionType sectionType = (SectionType) element.getValue();
                         if (sectionType.getDeactivatedOrDiag() != null && !sectionType.getDeactivatedOrDiag().isEmpty()) {
@@ -184,7 +197,7 @@ public class ExtractorServiceImpl implements ExtractorService {
                                 parseSection(diagnosisType, chapter.getVersion(), chapter.getIcdReference(), chapter.getId(), sections);
                             }
                             //save section;
-                            logger.info("Saving Section into DB: size {}", sections.size());
+                           logger.info("Saving Section into DB: size {}", sections.size());
                             sectionRepository.saveAll(sections);
                             logger.info("Saved Section into DB: Successfully {}", sections.size());
                         } else {
@@ -389,7 +402,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private void populateNeoPlasmCode(final Neoplasm neoplasmOne, List<NeoPlasmCode> neoplasmCodes, Object j) {
 		NeoPlasmCode neoPlasmCode = new NeoPlasmCode();
 		neoPlasmCode.setNeoplasm_id(neoplasmOne.getId());
-		neoPlasmCode.setCode(j.toString());
+		neoPlasmCode.setCode(replaceDot(j.toString()));
 		neoplasmCodes.add(neoPlasmCode);
 	}
 
@@ -420,7 +433,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private void populateEIndexCode(List<EIndex> eIndexArray, MainTerm m) {
 		EIndex eIndex = new EIndex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
-		eIndex.setCode(m.getCode());
+		eIndex.setCode(replaceDot(m.getCode()));
 		eIndex.setSee(m.getSee());
 		eIndex.setSeealso(m.getSeeAlso());
 		eIndex.setSeecat(m.getSeecat());
@@ -464,7 +477,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private void populateDrugCode(final Drug drug, List<DrugCode> drugCodes, Object code) {
 		DrugCode drugCode = new DrugCode();
 		drugCode.setDrug_id(drug.getId());
-		drugCode.setCode(code.toString());
+		drugCode.setCode(replaceDot(code.toString()));
 		drugCodes.add(drugCode);
 	}
 
@@ -493,6 +506,13 @@ public class ExtractorServiceImpl implements ExtractorService {
 		drug.setIsmainterm(false);
 		return drug;
 	}
+
+    private String replaceDot(String input) {
+        if(input != null) {
+            input = input.replaceAll(".", "");
+        }
+        return input;
+    }
 }
 
 

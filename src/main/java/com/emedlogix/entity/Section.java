@@ -1,12 +1,15 @@
 package com.emedlogix.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.hibernate.annotations.Cascade;
 
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +24,13 @@ public class Section {
     @OneToMany(mappedBy="section")
     @Cascade(org.hibernate.annotations.CascadeType.ALL)
     List<Notes> notes;
+
+    @Transient
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    VisualImpairment visualImpairment;
+
+    @JsonIgnore
+    String visImpair;
 
     public String getCode() {
         return code;
@@ -63,6 +73,24 @@ public class Section {
         this.notes = notes;
     }
 
+    public VisualImpairment getVisualImpairment() throws JsonProcessingException {
+        visualImpairment = this.visImpair != null ? new ObjectMapper().readValue(this.visImpair, VisualImpairment.class): null;
+        return visualImpairment;
+    }
+
+    public void setVisualImpairment(VisualImpairment visualImpairment) throws JsonProcessingException {
+        //visualImpairment = new ObjectMapper().readValue(this.visImpair, VisualImpairment.class);
+        this.visualImpairment = visualImpairment;
+    }
+
+    public String getVisImpair() throws JsonProcessingException {
+        return this.visImpair;
+    }
+
+    public void setVisImpair(String visImpair) {
+        this.visImpair = visImpair;
+    }
+
     @Override
     public String toString() {
         return "Section{" +
@@ -71,6 +99,7 @@ public class Section {
                 ", icdReference='" + icdReference + '\'' +
                 ", version='" + version + '\'' +
                 ", notes=" + notes +
+                ", visualImpairment=" + visualImpairment + '\'' +
                 '}';
     }
 }
