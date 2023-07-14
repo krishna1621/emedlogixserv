@@ -537,7 +537,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     private String replaceDot(String input) {
         if(input != null) {
-            input = input.replaceAll(".", "");
+            input = input.replace(".", "");
         }
         return input;
     }
