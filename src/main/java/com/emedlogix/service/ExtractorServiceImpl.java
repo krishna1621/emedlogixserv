@@ -6,12 +6,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 
+
 import com.emedlogix.codes.*;
 import com.emedlogix.entity.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.sun.org.apache.xerces.internal.dom.ElementNSImpl;
+
+import org.apache.logging.log4j.util.Strings;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -399,10 +403,10 @@ public class ExtractorServiceImpl implements ExtractorService {
 		});
 	}
 
-	private void populateNeoPlasmCode(final Neoplasm neoplasmOne, List<NeoPlasmCode> neoplasmCodes, Object j) {
+	private void populateNeoPlasmCode(final Neoplasm neoplasmOne, List<NeoPlasmCode> neoplasmCodes, Object obj) {
 		NeoPlasmCode neoPlasmCode = new NeoPlasmCode();
 		neoPlasmCode.setNeoplasm_id(neoplasmOne.getId());
-		neoPlasmCode.setCode(replaceDot(j.toString()));
+		neoPlasmCode.setCode(replaceDot(obj.toString()));
 		neoplasmCodes.add(neoPlasmCode);
 	}
 
@@ -420,17 +424,19 @@ public class ExtractorServiceImpl implements ExtractorService {
 		Object obj = parseXML("icd10cm_eindex_2023.xml",ICD10CMIndex.class);
 		if(obj instanceof ICD10CMIndex) {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
-			List<EIndex> eIndexArray = new ArrayList<>();
 			icd10CMIndex.getLetter().stream().forEach(l -> {
 				l.getMainTerm().stream().forEach(m -> {
-					populateEIndexCode(eIndexArray, m);
+					populateAndSaveEIndex(m);
+					if(!m.getTerm().isEmpty()) {
+						parseEIndexLevelTerm(m.getTerm());
+					}
+
 				});
-				eIndexRepository.saveAll(eIndexArray);
 			});
 		}
 	}
 
-	private void populateEIndexCode(List<EIndex> eIndexArray, MainTerm m) {
+	private void populateAndSaveEIndex(MainTerm m) {
 		EIndex eIndex = new EIndex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
 		eIndex.setCode(replaceDot(m.getCode()));
@@ -438,7 +444,29 @@ public class ExtractorServiceImpl implements ExtractorService {
 		eIndex.setSeealso(m.getSeeAlso());
 		eIndex.setSeecat(m.getSeecat());
 		eIndex.setIsmainterm(true);
-		eIndexArray.add(eIndex);
+		eIndexRepository.save(eIndex);
+	}
+
+	private void parseEIndexLevelTerm(List<Term> term) {
+		term.forEach(a -> {
+			populateAndSaveEIndexLevelTerm(a);
+			if(!a.getTerm().isEmpty()) {
+				parseEIndexLevelTerm(a.getTerm());
+			}
+		});
+	}
+
+	private void populateAndSaveEIndexLevelTerm(Term m) {
+		EIndex eIndex = new EIndex();
+		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
+		if(Strings.isNotBlank(m.getCode())) {
+			eIndex.setCode(m.getCode().replace(".", ""));
+		}
+		eIndex.setSee(m.getSee());
+		eIndex.setSeealso(m.getSeeAlso());
+		eIndex.setSeecat(m.getSeecat());
+		eIndex.setIsmainterm(false);
+		eIndexRepository.save(eIndex);
 	}
 
 	@Override
