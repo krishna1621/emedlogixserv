@@ -2,9 +2,11 @@ package com.emedlogix.service;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,7 @@ import com.emedlogix.controller.CodeSearchController;
 import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
 import com.emedlogix.entity.EIndex;
+import com.emedlogix.entity.MedicalCodeVO;
 import com.emedlogix.entity.Section;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
@@ -92,12 +95,27 @@ public class CodeSearchService implements CodeSearchController {
 	}
 
 	@Override
-	public List<Map<String,Object>> getNeoPlasm(String code) {
-		return neoPlasmRepository.findNeoplasmByCode(code);
+	public List<MedicalCodeVO> getNeoPlasm(String code) {
+		return neoPlasmRepository.findNeoplasmByCode(code).stream().map(m -> {
+			return populateMedicalCode(m);
+		}).collect(Collectors.toList());
 	}
 	
 	@Override
-	public List<Map<String,Object>> getDrug(String code) {
-		return drugRepository.findDrugByCode(code);
+	public List<MedicalCodeVO> getDrug(String code) {
+		return drugRepository.findDrugByCode(code).stream().map(m -> {
+			return populateMedicalCode(m);
+		}).collect(Collectors.toList());
+	}
+
+	private MedicalCodeVO populateMedicalCode(Map<String, Object> m) {
+		MedicalCodeVO medicalCode = new MedicalCodeVO();
+		medicalCode.setId(Integer.valueOf(String.valueOf(m.get("id"))));
+		medicalCode.setTitle(String.valueOf(m.get("title")));
+		medicalCode.setSee(String.valueOf(m.get("see")));
+		medicalCode.setSeealso(String.valueOf(m.get("seealso")));
+		medicalCode.setIsmainterm(Boolean.valueOf(String.valueOf(m.get("ismainterm"))));
+		medicalCode.setCode(Arrays.asList(String.valueOf(m.get("code")).split(",")));
+		return medicalCode;
 	}
 }

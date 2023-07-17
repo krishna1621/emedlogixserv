@@ -3,7 +3,6 @@ package com.emedlogix.controller;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
 import com.emedlogix.entity.EIndex;
+import com.emedlogix.entity.MedicalCodeVO;
 
 
 @RestController
@@ -29,7 +29,7 @@ public interface CodeSearchController {
     @GetMapping("/{code}/index")
     List<EIndex> getEIndex(@PathVariable String code, @RequestParam("filterBy") String filterBy);
     @GetMapping("/{code}/neoplasm")
-    List<Map<String,Object>> getNeoPlasm(@PathVariable String code);
+    List<MedicalCodeVO> getNeoPlasm(@PathVariable String code);
     @GetMapping("/{code}/drug")
-	List<Map<String, Object>> getDrug(@PathVariable String code);
+	List<MedicalCodeVO> getDrug(@PathVariable String code);
 }

@@ -33,7 +33,7 @@ import com.emedlogix.repository.NeoPlasmCodeRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.NotesRepository;
 import com.emedlogix.repository.SectionRepository;
-
+import com.emedlogix.repository.TermHierarchyRepository;
 import com.emedlogix.index.ICD10CMIndex;
 import com.emedlogix.index.MainTerm;
 import com.emedlogix.index.Term;
@@ -76,6 +76,9 @@ public class ExtractorServiceImpl implements ExtractorService {
     
     @Autowired
     DrugCodeRepository drugCodeRepository;
+
+    @Autowired
+    TermHierarchyRepository hierarchyRepository;
 
     private List<Section> parseSection(DiagnosisType diagnosisType, String version, String icdRef, String chapterId, List<Section> sections) throws JsonProcessingException {
         List<JAXBElement<?>> inclusionTermOrSevenChrNoteOrSevenChrDef = diagnosisType.getInclusionTermOrSevenChrNoteOrSevenChrDef();
@@ -420,23 +423,33 @@ public class ExtractorServiceImpl implements ExtractorService {
 	}
 
 	@Override
+	public void doExtractEIndex() {
+		parseIndexesFile(parseXML("icd10cm_eindex_2023.xml",ICD10CMIndex.class));
+	}
+
+	@Override
 	public void doExtractIndex() {
-		Object obj = parseXML("icd10cm_eindex_2023.xml",ICD10CMIndex.class);
+		parseIndexesFile(parseXML("icd10cm_index_2023.xml",ICD10CMIndex.class));
+	}
+
+	private void parseIndexesFile(Object obj) {
 		if(obj instanceof ICD10CMIndex) {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
 			icd10CMIndex.getLetter().stream().forEach(l -> {
 				l.getMainTerm().stream().forEach(m -> {
-					populateAndSaveEIndex(m);
+					EIndex index = populateAndSaveEIndex(m);
+					List<Integer> ids = new ArrayList<>();
+					ids.add(index.getId());
+					populateAndSaveHierarchy(index.getId(),index.getId(),0);
 					if(!m.getTerm().isEmpty()) {
-						parseEIndexLevelTerm(m.getTerm());
+						parseEIndexLevelTerm(m.getTerm(),ids);
 					}
-
 				});
 			});
 		}
 	}
 
-	private void populateAndSaveEIndex(MainTerm m) {
+	private EIndex populateAndSaveEIndex(MainTerm m) {
 		EIndex eIndex = new EIndex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
 		eIndex.setCode(replaceDot(m.getCode()));
@@ -444,29 +457,49 @@ public class ExtractorServiceImpl implements ExtractorService {
 		eIndex.setSeealso(m.getSeeAlso());
 		eIndex.setSeecat(m.getSeecat());
 		eIndex.setIsmainterm(true);
-		eIndexRepository.save(eIndex);
+		return eIndexRepository.save(eIndex);
 	}
 
-	private void parseEIndexLevelTerm(List<Term> term) {
+	private void populateAndSaveHierarchy(Integer parentId,Integer childId, Integer level) {
+		TermHierarchy termHierarchy = new TermHierarchy();
+		termHierarchy.setParentId(parentId);
+		termHierarchy.setChildId(childId);
+		termHierarchy.setLevel(level);
+		hierarchyRepository.save(termHierarchy);
+	}
+
+	private void parseEIndexLevelTerm(List<Term> term, List<Integer> ids) {
 		term.forEach(a -> {
-			populateAndSaveEIndexLevelTerm(a);
-			if(!a.getTerm().isEmpty()) {
-				parseEIndexLevelTerm(a.getTerm());
+			EIndex index = populateAndSaveEIndexLevelTerm(a);
+			if(a.getLevel() == ids.size()) {
+				ids.add(index.getId());
+			} else {
+				for (int i=ids.size()-1; i>=a.getLevel(); i--) {
+					ids.remove(i);
+				}
+				ids.add(index.getId());
 			}
+			int level = 0;
+			for (int i=ids.size()-1; i>=0; i--) {
+				populateAndSaveHierarchy(ids.get(i),index.getId(),level);
+				level++;
+			}
+			if(!a.getTerm().isEmpty()) {
+				parseEIndexLevelTerm(a.getTerm(),ids);
+			}
+
 		});
 	}
 
-	private void populateAndSaveEIndexLevelTerm(Term m) {
+	private EIndex populateAndSaveEIndexLevelTerm(Term m) {
 		EIndex eIndex = new EIndex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
-		if(Strings.isNotBlank(m.getCode())) {
-			eIndex.setCode(m.getCode().replace(".", ""));
-		}
+		eIndex.setCode(replaceDot(m.getCode()));
 		eIndex.setSee(m.getSee());
 		eIndex.setSeealso(m.getSeeAlso());
 		eIndex.setSeecat(m.getSeecat());
 		eIndex.setIsmainterm(false);
-		eIndexRepository.save(eIndex);
+		return eIndexRepository.save(eIndex);
 	}
 
 	@Override
