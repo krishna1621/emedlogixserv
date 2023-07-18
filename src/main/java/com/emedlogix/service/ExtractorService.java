@@ -12,6 +12,4 @@ public interface ExtractorService {
     void doExtractNeoplasm();
     
     void doExtractDrug();
-
-	void doExtractEIndex();
 }

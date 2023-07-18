@@ -17,14 +17,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.emedlogix.controller.CodeSearchController;
 import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.EIndex;
+import com.emedlogix.entity.Eindex;
+import com.emedlogix.entity.EindexVO;
 import com.emedlogix.entity.MedicalCodeVO;
 import com.emedlogix.entity.Section;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
 import com.emedlogix.repository.DrugRepository;
-import com.emedlogix.repository.EIndexRepository;
 import com.emedlogix.repository.ESCodeInfoRepository;
+import com.emedlogix.repository.EindexRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.SectionRepository;
 
@@ -47,13 +48,13 @@ public class CodeSearchService implements CodeSearchController {
     ChapterRepository chapterRepository;
     
     @Autowired
-    EIndexRepository eIndexRepository;
-    
-    @Autowired
     NeoPlasmRepository neoPlasmRepository;
-    
+
     @Autowired
     DrugRepository drugRepository;
+
+    @Autowired
+    EindexRepository eindexRepository;
 
     @Override
     public CodeInfo getCodeInfo(String code) {
@@ -90,8 +91,10 @@ public class CodeSearchService implements CodeSearchController {
     }
 
 	@Override
-	public List<EIndex> getEIndex(String code, String filterBy) {
-		return eIndexRepository.findMainTermBySearch(code,filterBy);
+	public List<EindexVO> getEIndex(String code) {
+		return eindexRepository.findMainTermBySearch(code).stream().map(m -> {
+			return populateEindex(m);
+		}).collect(Collectors.toList());
 	}
 
 	@Override
@@ -117,5 +120,19 @@ public class CodeSearchService implements CodeSearchController {
 		medicalCode.setIsmainterm(Boolean.valueOf(String.valueOf(m.get("ismainterm"))));
 		medicalCode.setCode(Arrays.asList(String.valueOf(m.get("code")).split(",")));
 		return medicalCode;
+	}
+
+	private EindexVO populateEindex(Eindex eindex) {
+		EindexVO eindexVo = new EindexVO();
+		eindexVo.setId(eindex.getId());
+		eindexVo.setTitle(eindex.getTitle());
+		eindexVo.setSee(eindex.getSee());
+		eindexVo.setSeealso(eindex.getSeealso());
+		eindexVo.setIsmainterm(eindex.getIsmainterm());
+		eindexVo.setCode(eindex.getCode());
+		if(!eindex.getIsmainterm()) {
+			eindexVo.setTermHierarchyList(eindexRepository.getParentChildList(eindex.getId()));
+		}
+		return eindexVo;
 	}
 }

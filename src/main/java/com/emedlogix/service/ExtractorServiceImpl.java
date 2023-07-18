@@ -4,17 +4,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
-
-
-import com.emedlogix.codes.*;
-import com.emedlogix.entity.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.sun.org.apache.xerces.internal.dom.ElementNSImpl;
-
-import org.apache.logging.log4j.util.Strings;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,20 +20,48 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ResourceUtils;
 
+import com.emedlogix.codes.ChapterType;
+import com.emedlogix.codes.ContentType;
+import com.emedlogix.codes.DiagnosisType;
+import com.emedlogix.codes.ICD10CMTabular;
+import com.emedlogix.codes.NoteType;
+import com.emedlogix.codes.SectionIndexType;
+import com.emedlogix.codes.SectionType;
+import com.emedlogix.codes.VisualImpairmentType;
+import com.emedlogix.entity.Category;
+import com.emedlogix.entity.Chapter;
+import com.emedlogix.entity.CodeDetails;
+import com.emedlogix.entity.CodeInfo;
+import com.emedlogix.entity.Drug;
+import com.emedlogix.entity.DrugCode;
+import com.emedlogix.entity.Eindex;
+import com.emedlogix.entity.NeoPlasmCode;
+import com.emedlogix.entity.Neoplasm;
+import com.emedlogix.entity.Notes;
+import com.emedlogix.entity.Section;
+import com.emedlogix.entity.SectionReference;
+import com.emedlogix.entity.TermHierarchy;
+import com.emedlogix.entity.VisRange;
+import com.emedlogix.entity.VisualImpairment;
+import com.emedlogix.index.ICD10CMIndex;
+import com.emedlogix.index.MainTerm;
+import com.emedlogix.index.Term;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
 import com.emedlogix.repository.DrugCodeRepository;
 import com.emedlogix.repository.DrugRepository;
-import com.emedlogix.repository.EIndexRepository;
 import com.emedlogix.repository.ESCodeInfoRepository;
+import com.emedlogix.repository.EindexRepository;
 import com.emedlogix.repository.NeoPlasmCodeRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.NotesRepository;
 import com.emedlogix.repository.SectionRepository;
 import com.emedlogix.repository.TermHierarchyRepository;
-import com.emedlogix.index.ICD10CMIndex;
-import com.emedlogix.index.MainTerm;
-import com.emedlogix.index.Term;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.sun.org.apache.xerces.internal.dom.ElementNSImpl;
+
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
@@ -63,7 +88,7 @@ public class ExtractorServiceImpl implements ExtractorService {
     NotesRepository notesRepository;
     
     @Autowired
-    EIndexRepository eIndexRepository;
+    EindexRepository eindexRepository;
     
     @Autowired
     NeoPlasmRepository neoPlasmRepository;
@@ -423,12 +448,8 @@ public class ExtractorServiceImpl implements ExtractorService {
 	}
 
 	@Override
-	public void doExtractEIndex() {
+	public void doExtractIndex() {//test_index.xml, icd10cm_index_2023.xml
 		parseIndexesFile(parseXML("icd10cm_eindex_2023.xml",ICD10CMIndex.class));
-	}
-
-	@Override
-	public void doExtractIndex() {
 		parseIndexesFile(parseXML("icd10cm_index_2023.xml",ICD10CMIndex.class));
 	}
 
@@ -437,7 +458,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
 			icd10CMIndex.getLetter().stream().forEach(l -> {
 				l.getMainTerm().stream().forEach(m -> {
-					EIndex index = populateAndSaveEIndex(m);
+					Eindex index = populateAndSaveEIndex(m);
 					List<Integer> ids = new ArrayList<>();
 					ids.add(index.getId());
 					populateAndSaveHierarchy(index.getId(),index.getId(),0);
@@ -449,15 +470,15 @@ public class ExtractorServiceImpl implements ExtractorService {
 		}
 	}
 
-	private EIndex populateAndSaveEIndex(MainTerm m) {
-		EIndex eIndex = new EIndex();
+	private Eindex populateAndSaveEIndex(MainTerm m) {
+		Eindex eIndex = new Eindex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
 		eIndex.setCode(replaceDot(m.getCode()));
 		eIndex.setSee(m.getSee());
 		eIndex.setSeealso(m.getSeeAlso());
 		eIndex.setSeecat(m.getSeecat());
 		eIndex.setIsmainterm(true);
-		return eIndexRepository.save(eIndex);
+		return eindexRepository.save(eIndex);
 	}
 
 	private void populateAndSaveHierarchy(Integer parentId,Integer childId, Integer level) {
@@ -470,7 +491,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 
 	private void parseEIndexLevelTerm(List<Term> term, List<Integer> ids) {
 		term.forEach(a -> {
-			EIndex index = populateAndSaveEIndexLevelTerm(a);
+			Eindex index = populateAndSaveEIndexLevelTerm(a);
 			if(a.getLevel() == ids.size()) {
 				ids.add(index.getId());
 			} else {
@@ -491,15 +512,15 @@ public class ExtractorServiceImpl implements ExtractorService {
 		});
 	}
 
-	private EIndex populateAndSaveEIndexLevelTerm(Term m) {
-		EIndex eIndex = new EIndex();
+	private Eindex populateAndSaveEIndexLevelTerm(Term m) {
+		Eindex eIndex = new Eindex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
 		eIndex.setCode(replaceDot(m.getCode()));
 		eIndex.setSee(m.getSee());
 		eIndex.setSeealso(m.getSeeAlso());
 		eIndex.setSeecat(m.getSeecat());
 		eIndex.setIsmainterm(false);
-		return eIndexRepository.save(eIndex);
+		return eindexRepository.save(eIndex);
 	}
 
 	@Override

@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.EIndex;
+import com.emedlogix.entity.Eindex;
+import com.emedlogix.entity.EindexVO;
 import com.emedlogix.entity.MedicalCodeVO;
 
 
@@ -27,7 +28,7 @@ public interface CodeSearchController {
     @GetMapping("/{code}/details")
     CodeDetails getCodeInfoDetails(@PathVariable String code);
     @GetMapping("/{code}/index")
-    List<EIndex> getEIndex(@PathVariable String code, @RequestParam("filterBy") String filterBy);
+    List<EindexVO> getEIndex(@PathVariable String code);
     @GetMapping("/{code}/neoplasm")
     List<MedicalCodeVO> getNeoPlasm(@PathVariable String code);
     @GetMapping("/{code}/drug")
