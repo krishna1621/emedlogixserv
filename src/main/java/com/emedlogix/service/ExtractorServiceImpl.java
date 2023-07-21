@@ -396,7 +396,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		Neoplasm neoplasm = new Neoplasm();
 		neoplasm.setTitle(m.getTitle().getContent().get(0).toString());
 		if(m.getTitle().getContent().size()>1) {
-			neoplasm.setNemod(m.getTitle().getContent().get(1).toString());
+			neoplasm.setNemod(getNemodVal(m.getTitle().getContent().get(1)));
 		}
 		neoplasm.setSee(m.getSee());
 		neoplasm.setSeealso(m.getSeeAlso());
@@ -445,7 +445,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		Neoplasm neoplasm = new Neoplasm();
 		neoplasm.setTitle(a.getTitle().getContent().get(0).toString());
 		if(a.getTitle().getContent().size()>1) {
-			neoplasm.setNemod(a.getTitle().getContent().get(1).toString());
+			neoplasm.setNemod(getNemodVal(a.getTitle().getContent().get(1)));
 		}
 		neoplasm.setSee(a.getSee());
 		neoplasm.setSeealso(a.getSeeAlso());
@@ -480,7 +480,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		Eindex eIndex = new Eindex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
 		if(m.getTitle().getContent().size()>1) {
-			eIndex.setNemod(m.getTitle().getContent().get(1).toString());
+			eIndex.setNemod(getNemodVal(m.getTitle().getContent().get(1)));
 		}
 		eIndex.setCode(replaceDot(m.getCode()));
 		eIndex.setSee(m.getSee());
@@ -525,7 +525,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		Eindex eIndex = new Eindex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
 		if(m.getTitle().getContent().size()>1) {
-			eIndex.setNemod(m.getTitle().getContent().get(1).toString());
+			eIndex.setNemod(getNemodVal(m.getTitle().getContent().get(1)));
 		}
 		eIndex.setCode(replaceDot(m.getCode()));
 		eIndex.setSee(m.getSee());
@@ -563,7 +563,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		Drug drug = new Drug();
 		drug.setTitle(m.getTitle().getContent().get(0).toString());
 		if(m.getTitle().getContent().size()>1) {
-			drug.setNemod(m.getTitle().getContent().get(1).toString());
+			drug.setNemod(getNemodVal(m.getTitle().getContent().get(1)));
 		}
 		drug.setSee(m.getSee());
 		drug.setSeealso(m.getSeeAlso());
@@ -613,6 +613,14 @@ public class ExtractorServiceImpl implements ExtractorService {
         }
         return input;
     }
+
+    private String getNemodVal(Object obj) {
+    	if (obj instanceof JAXBElement) {
+    		JAXBElement element = (JAXBElement) obj;
+			return element.getValue().toString();
+		}
+		return new String();
+	}
 }
 
 
