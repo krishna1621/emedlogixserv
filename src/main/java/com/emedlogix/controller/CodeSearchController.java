@@ -7,12 +7,9 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.Eindex;
 import com.emedlogix.entity.EindexVO;
 import com.emedlogix.entity.MedicalCodeVO;
 
@@ -25,6 +22,9 @@ public interface CodeSearchController {
     CodeInfo getCodeInfo(@PathVariable String code) throws IOException;
     @GetMapping("/{code}/matches")
     List<CodeInfo> getCodeInfoMatches(@PathVariable String code);
+
+    @GetMapping("/{description}/description")
+    List<CodeInfo> getCodeInfoDescription(@PathVariable String description);
     @GetMapping("/{code}/details")
     CodeDetails getCodeInfoDetails(@PathVariable String code);
     @GetMapping("/{code}/index")

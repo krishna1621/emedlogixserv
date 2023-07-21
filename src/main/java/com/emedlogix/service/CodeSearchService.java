@@ -76,6 +76,20 @@ public class CodeSearchService implements CodeSearchController {
         return codeInfoList;
     }
 
+	@Override
+	public List<CodeInfo> getCodeInfoDescription(String description) {
+		logger.info("Getting Code information Details for Description:",description);
+		List<CodeInfo> codeInfoList = new ArrayList<>();
+		Iterable<CodeInfo> codeInfoIterable = esCodeInfoRepository.findByDescriptionContains(description);
+		Iterator<CodeInfo> infoIterator = codeInfoIterable.iterator();
+		while (infoIterator.hasNext()){
+			CodeInfo codeInfo = infoIterator.next();
+			codeInfoList.add(codeInfo);
+		}
+		logger.info("Got description size :",codeInfoList.size());
+		return codeInfoList;
+	}
+
     public CodeDetails getCodeInfoDetails(@PathVariable String code){
         logger.info("Getting Code Information Details for code:", code);
         CodeDetails codeDetails = dbCodeDetailsRepository.findByCode(code);
