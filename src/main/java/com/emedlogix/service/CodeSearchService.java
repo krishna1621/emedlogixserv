@@ -93,7 +93,7 @@ public class CodeSearchService implements CodeSearchController {
 	@Override
 	public List<EindexVO> getEIndex(String code) {
 		return eindexRepository.findMainTermBySearch(code).stream().map(m -> {
-			return populateEindex(m);
+			return getParentChildHierarchy(m);
 		}).collect(Collectors.toList());
 	}
 
@@ -122,17 +122,32 @@ public class CodeSearchService implements CodeSearchController {
 		return medicalCode;
 	}
 
-	private EindexVO populateEindex(Eindex eindex) {
-		EindexVO eindexVo = new EindexVO();
-		eindexVo.setId(eindex.getId());
-		eindexVo.setTitle(eindex.getTitle());
-		eindexVo.setSee(eindex.getSee());
-		eindexVo.setSeealso(eindex.getSeealso());
-		eindexVo.setIsmainterm(eindex.getIsmainterm());
-		eindexVo.setCode(eindex.getCode());
-		if(!eindex.getIsmainterm()) {
-			eindexVo.setTermHierarchyList(eindexRepository.getParentChildList(eindex.getId()));
+	private EindexVO getParentChildHierarchy(Eindex eindex) {
+		EindexVO resultEindexVO = null;
+		List<Map<String,Object>> resultMap = eindexRepository.getParentChildList(eindex.getId());
+		for(int x = 0; x < resultMap.size(); x++) {
+			if(resultEindexVO == null) {
+				resultEindexVO = populateEindexVO(resultMap.get(x));
+			} else {
+				EindexVO eindexVO = populateEindexVO(resultMap.get(x));
+				eindexVO.setChild(resultEindexVO);
+				resultEindexVO = eindexVO;
+			}
 		}
+		if(resultEindexVO == null) {
+			resultEindexVO = new EindexVO();
+		}
+		return resultEindexVO;
+	}
+
+	private EindexVO populateEindexVO(Map<String,Object> map) {
+		EindexVO eindexVo = new EindexVO();
+		eindexVo.setId(Integer.parseInt(map.get("id").toString()));
+		eindexVo.setTitle(String.valueOf(map.get("title")));
+		eindexVo.setSee(String.valueOf(map.get("see")));
+		eindexVo.setSeealso(String.valueOf(map.get("seealso")));
+		eindexVo.setIsmainterm(Boolean.valueOf(map.get("ismainterm").toString()));
+		eindexVo.setCode(String.valueOf(map.get("code")));
 		return eindexVo;
 	}
 }
