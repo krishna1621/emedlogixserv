@@ -20,5 +20,6 @@ public class Drug {
     String title;
     String see;
     String seealso;
+    String nemod;
     Boolean ismainterm;
 }

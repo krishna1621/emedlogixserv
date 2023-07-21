@@ -395,6 +395,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private Neoplasm populateNeoPlasmMainTerm(MainTerm m) {
 		Neoplasm neoplasm = new Neoplasm();
 		neoplasm.setTitle(m.getTitle().getContent().get(0).toString());
+		if(m.getTitle().getContent().size()>1) {
+			neoplasm.setNemod(m.getTitle().getContent().get(1).toString());
+		}
 		neoplasm.setSee(m.getSee());
 		neoplasm.setSeealso(m.getSeeAlso());
 		neoplasm.setIsmainterm(true);
@@ -441,6 +444,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private Neoplasm populateNeoPlasmLavelTerm(Term a) {
 		Neoplasm neoplasm = new Neoplasm();
 		neoplasm.setTitle(a.getTitle().getContent().get(0).toString());
+		if(a.getTitle().getContent().size()>1) {
+			neoplasm.setNemod(a.getTitle().getContent().get(1).toString());
+		}
 		neoplasm.setSee(a.getSee());
 		neoplasm.setSeealso(a.getSeeAlso());
 		neoplasm.setIsmainterm(false);
@@ -448,7 +454,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 	}
 
 	@Override
-	public void doExtractIndex() {//test_index.xml, icd10cm_index_2023.xml
+	public void doExtractIndex() {//test_index.xml, icd10cm_index_2023.xml,icd10cm_eindex_2023.xml
 		parseIndexesFile(parseXML("icd10cm_eindex_2023.xml",ICD10CMIndex.class));
 		parseIndexesFile(parseXML("icd10cm_index_2023.xml",ICD10CMIndex.class));
 	}
@@ -473,6 +479,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private Eindex populateAndSaveEIndex(MainTerm m) {
 		Eindex eIndex = new Eindex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
+		if(m.getTitle().getContent().size()>1) {
+			eIndex.setNemod(m.getTitle().getContent().get(1).toString());
+		}
 		eIndex.setCode(replaceDot(m.getCode()));
 		eIndex.setSee(m.getSee());
 		eIndex.setSeealso(m.getSeeAlso());
@@ -515,6 +524,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private Eindex populateAndSaveEIndexLevelTerm(Term m) {
 		Eindex eIndex = new Eindex();
 		eIndex.setTitle(m.getTitle().getContent().get(0).toString());
+		if(m.getTitle().getContent().size()>1) {
+			eIndex.setNemod(m.getTitle().getContent().get(1).toString());
+		}
 		eIndex.setCode(replaceDot(m.getCode()));
 		eIndex.setSee(m.getSee());
 		eIndex.setSeealso(m.getSeeAlso());
@@ -550,6 +562,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private Drug populateDrugMainTerm(MainTerm m) {
 		Drug drug = new Drug();
 		drug.setTitle(m.getTitle().getContent().get(0).toString());
+		if(m.getTitle().getContent().size()>1) {
+			drug.setNemod(m.getTitle().getContent().get(1).toString());
+		}
 		drug.setSee(m.getSee());
 		drug.setSeealso(m.getSeeAlso());
 		drug.setIsmainterm(true);
@@ -583,6 +598,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 	private Drug populateDrugLevelTerm(Term a) {
 		Drug drug = new Drug();
 		drug.setTitle(a.getTitle().getContent().get(0).toString());
+		if(a.getTitle().getContent().size()>1) {
+			drug.setNemod(a.getTitle().getContent().get(1).toString());
+		}
 		drug.setSee(a.getSee());
 		drug.setSeealso(a.getSeeAlso());
 		drug.setIsmainterm(false);

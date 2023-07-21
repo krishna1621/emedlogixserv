@@ -13,5 +13,6 @@ public class MedicalCodeVO {
     String see;
     String seealso;
     Boolean ismainterm;
+    String nemod;
     List<String> code;
 }

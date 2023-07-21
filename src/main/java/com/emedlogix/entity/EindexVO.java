@@ -13,5 +13,6 @@ public class EindexVO {
     private String see;
     private String seealso;
     private Boolean ismainterm;
+    private String nemod;
     private EindexVO child;
 }

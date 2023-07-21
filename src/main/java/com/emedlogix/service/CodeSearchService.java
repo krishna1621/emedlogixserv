@@ -118,6 +118,7 @@ public class CodeSearchService implements CodeSearchController {
 		medicalCode.setSee(String.valueOf(m.get("see")));
 		medicalCode.setSeealso(String.valueOf(m.get("seealso")));
 		medicalCode.setIsmainterm(Boolean.valueOf(String.valueOf(m.get("ismainterm"))));
+		medicalCode.setNemod(String.valueOf(m.get("nemod")));
 		medicalCode.setCode(Arrays.asList(String.valueOf(m.get("code")).split(",")));
 		return medicalCode;
 	}
@@ -148,6 +149,7 @@ public class CodeSearchService implements CodeSearchController {
 		eindexVo.setSeealso(String.valueOf(map.get("seealso")));
 		eindexVo.setIsmainterm(Boolean.valueOf(map.get("ismainterm").toString()));
 		eindexVo.setCode(String.valueOf(map.get("code")));
+		eindexVo.setNemod(String.valueOf(map.get("nemod")));
 		return eindexVo;
 	}
 }
