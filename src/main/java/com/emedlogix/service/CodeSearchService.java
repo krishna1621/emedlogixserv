@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.emedlogix.entity.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.emedlogix.controller.CodeSearchController;
-import com.emedlogix.entity.CodeDetails;
-import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.Eindex;
-import com.emedlogix.entity.EindexVO;
-import com.emedlogix.entity.MedicalCodeVO;
-import com.emedlogix.entity.Section;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
 import com.emedlogix.repository.DrugRepository;
@@ -28,6 +23,7 @@ import com.emedlogix.repository.ESCodeInfoRepository;
 import com.emedlogix.repository.EindexRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.SectionRepository;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 @Service
@@ -90,10 +86,10 @@ public class CodeSearchService implements CodeSearchController {
 		return codeInfoList;
 	}
 
-    public CodeDetails getCodeInfoDetails(@PathVariable String code){
+    public CodeDetails getCodeInfoDetails(@PathVariable String code, @RequestParam String version){
         logger.info("Getting Code Information Details for code:", code);
         CodeDetails codeDetails = dbCodeDetailsRepository.findByCode(code);
-        Section section = sectionRepository.findByCode(code);
+        Section section = sectionRepository.findByCodeAndVersion(code,version);
         if(section != null) {
             codeDetails.setSection(section);
             chapterRepository.findById(section.getChapterId()).ifPresent(value -> {
@@ -117,13 +113,27 @@ public class CodeSearchService implements CodeSearchController {
 			return getDrugNeoplasmHierarchy(m,"neoplasm");
 		}).collect(Collectors.toList());
 	}
-	
+
+	@Override
+	public List<MedicalCodeVO> getNeoplasmDetails(){
+	List<Map<String,Object>> allNeoplasmData = neoPlasmRepository.findAllNeoplasmData();
+	return  allNeoplasmData.stream().map(m -> {
+		return populateMedicalCode(m);
+	}).collect(Collectors.toList());
+	}
 	@Override
 	public List<MedicalCodeVO> getDrug(String code) {
 		return drugRepository.findDrugByCode(code).stream().map(m -> {
 			return getDrugNeoplasmHierarchy(m,"drug");
 		}).collect(Collectors.toList());
 	}
+	public List<MedicalCodeVO> getDrugDetails(){
+		List<Map<String,Object>> allDrugData = drugRepository.findAllDrugData();
+		return allDrugData.stream().map(m -> {
+			return populateMedicalCode(m);
+		}).collect(Collectors.toList());
+	}
+
 
 	private MedicalCodeVO getDrugNeoplasmHierarchy(Map<String, Object> m,String type) {		
 		MedicalCodeVO resultMedicalCode = null;
