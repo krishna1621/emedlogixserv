@@ -1,4 +1,5 @@
 FROM openjdk:8
+WORKDIR/emedlogixserv
 EXPOSE 8080
-ADD target/emedlogixserv.jar emedlogixserv.jar
+COPY target/emedlogixserv.jar emedlogixserv.jar
 ENTRYPOINT ["java","-jar","/emedlogixserv.jar"]
