@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.emedlogix.entity.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.emedlogix.controller.CodeSearchController;
-import com.emedlogix.entity.CodeDetails;
-import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.Eindex;
-import com.emedlogix.entity.EindexVO;
-import com.emedlogix.entity.MedicalCodeVO;
-import com.emedlogix.entity.Section;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
 import com.emedlogix.repository.DrugRepository;
@@ -28,6 +23,7 @@ import com.emedlogix.repository.ESCodeInfoRepository;
 import com.emedlogix.repository.EindexRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.SectionRepository;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 @Service
@@ -76,10 +72,24 @@ public class CodeSearchService implements CodeSearchController {
         return codeInfoList;
     }
 
-    public CodeDetails getCodeInfoDetails(@PathVariable String code){
+    @Override
+    public List<CodeInfo> getCodeInfoDescription(String description) {
+        logger.info("Getting Code Information for Description ", description);
+        List<CodeInfo> codeInfoList = new ArrayList<>();
+        Iterable<CodeInfo> codeInfos = esCodeInfoRepository.findByDescriptionContains(description);
+        Iterator<CodeInfo> iterator = codeInfos.iterator();
+        while (iterator.hasNext()){
+            CodeInfo codeInfo  = iterator.next();
+            codeInfoList.add(codeInfo);
+        }
+        logger.info("Got matching description :",codeInfoList.size());
+        return codeInfoList;
+    }
+
+    public CodeDetails getCodeInfoDetails(@PathVariable String code, @RequestParam String version){
         logger.info("Getting Code Information Details for code:", code);
         CodeDetails codeDetails = dbCodeDetailsRepository.findByCode(code);
-        Section section = sectionRepository.findByCode(code);
+        Section section = sectionRepository.findByCodeAndVersion(code,version);
         if(section != null) {
             codeDetails.setSection(section);
             chapterRepository.findById(section.getChapterId()).ifPresent(value -> {
@@ -90,6 +100,7 @@ public class CodeSearchService implements CodeSearchController {
         return codeDetails;
     }
 
+
 	@Override
 	public List<EindexVO> getEIndex(String code) {
 		return eindexRepository.findMainTermBySearch(code).stream().map(m -> {
@@ -97,13 +108,65 @@ public class CodeSearchService implements CodeSearchController {
 		}).collect(Collectors.toList());
 	}
 
+    @Override
+    public List<EindexVO> getIndexDetails(){
+        List<Map<String,Object>> allIndexData = eindexRepository.findAllIndexData();
+        return allIndexData.stream().map(m -> {
+            return populateEindexVO(m);
+        }).collect(Collectors.toList());
+    }
+
+
+
 	@Override
 	public List<MedicalCodeVO> getNeoPlasm(String code) {
 		return neoPlasmRepository.findNeoplasmByCode(code).stream().map(m -> {
 			return getDrugNeoplasmHierarchy(m,"neoplasm");
 		}).collect(Collectors.toList());
 	}
-	
+    @Override
+    public List<MedicalCodeVO> getNeoplasmDetails(){
+        List<Map<String,Object>> allNeoplasmData = neoPlasmRepository.findAllNeoplasmData();
+        return allNeoplasmData.stream().map(m->{
+            return populateMedicalCode(m);
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<MedicalCodeVO> filterNeoplasmDetails(String filterBy){
+        List<Map<String,Object>> allNeoplasmData = neoPlasmRepository.filterNeoplasmData(filterBy);
+        return allNeoplasmData.stream().map(m->{
+            return populateMedicalCode(m);
+        }).collect(Collectors.toList());
+    }
+
+/*
+    private MedicalCodeVO getParentChildHierarchyNeo(Neoplasm neoplasm){
+        MedicalCodeVO resultMedicalCodeVO = null;
+        List<Map<String,Object>> resultMap = neoPlasmRepository.getParentChildList(neoplasm.getId());
+        for (int x = 0; x < resultMap.size(); x++){
+            if (resultMedicalCodeVO == null) {
+                resultMedicalCodeVO = populateMedicalCodeNeo(resultMap.get(x));
+            } else {
+                MedicalCodeVO medicalCodeVO = populateMedicalCodeNeo(resultMap.get(x));
+                medicalCodeVO.setChild(resultMedicalCodeVO);
+                resultMedicalCodeVO = medicalCodeVO;
+            }
+        }
+        if (resultMedicalCodeVO == null) {
+            resultMedicalCodeVO = new MedicalCodeVO();
+        }
+        return resultMedicalCodeVO;
+    }
+    private MedicalCodeVO populateMedicalCodeNeo(Map<String, Object> map) {
+        MedicalCodeVO medicalCodeVO = new MedicalCodeVO();
+        medicalCodeVO.setId(Integer.parseInt(map.get("id").toString()));
+        medicalCodeVO.setTitle();
+    }
+
+ */
+
+
 	@Override
 	public List<MedicalCodeVO> getDrug(String code) {
 		return drugRepository.findDrugByCode(code).stream().map(m -> {
