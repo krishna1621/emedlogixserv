@@ -578,10 +578,10 @@ public class ExtractorServiceImpl implements ExtractorService {
 				l.getMainTerm().stream().forEach(m -> {
 					final Drug drug = populateDrugMainTerm(m);
 
-					//save neoplasm hierarchy
+					//save drug hierarchy
 					List<Integer> ids = new ArrayList<>();
 					ids.add(drug.getId());
-					populateAndSaveHierarchy(drug.getId(),drug.getId(),0);
+					saveDrugHierarchy(drug.getId(),drug.getId(),0);
 
 					List<DrugCode> drugCodes = new ArrayList<>();
 					m.getCell().stream().forEach(cell -> {
@@ -633,7 +633,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 			}
 			int level = 0;
 			for (int i=ids.size()-1; i>=0; i--) {
-				saveNeoplasmHierarchy(ids.get(i),drug.getId(),level);
+				saveDrugHierarchy(ids.get(i),drug.getId(),level);
 				level++;
 			}
 
@@ -647,7 +647,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 			drugCodeRepository.saveAll(drugCodes);
 
 			if(!a.getTerm().isEmpty()) {
-				parseNeoPlasmLevelTerm(a.getTerm(), ids);
+				parseDrugLevelTerm(a.getTerm(), ids);
 			}
 		});
 	}
