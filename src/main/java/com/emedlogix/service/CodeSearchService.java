@@ -100,27 +100,39 @@ public class CodeSearchService implements CodeSearchController {
 	@Override
 	public List<MedicalCodeVO> getNeoPlasm(String code) {
 		return neoPlasmRepository.findNeoplasmByCode(code).stream().map(m -> {
-			return populateMedicalCode(m);
+			return getDrugNeoplasmHierarchy(m,"neoplasm");
 		}).collect(Collectors.toList());
 	}
 	
 	@Override
 	public List<MedicalCodeVO> getDrug(String code) {
 		return drugRepository.findDrugByCode(code).stream().map(m -> {
-			return populateMedicalCode(m);
+			return getDrugNeoplasmHierarchy(m,"drug");
 		}).collect(Collectors.toList());
 	}
 
-	private MedicalCodeVO populateMedicalCode(Map<String, Object> m) {
-		MedicalCodeVO medicalCode = new MedicalCodeVO();
-		medicalCode.setId(Integer.valueOf(String.valueOf(m.get("id"))));
-		medicalCode.setTitle(String.valueOf(m.get("title")));
-		medicalCode.setSee(String.valueOf(m.get("see")));
-		medicalCode.setSeealso(String.valueOf(m.get("seealso")));
-		medicalCode.setIsmainterm(Boolean.valueOf(String.valueOf(m.get("ismainterm"))));
-		medicalCode.setNemod(String.valueOf(m.get("nemod")));
-		medicalCode.setCode(Arrays.asList(String.valueOf(m.get("code")).split(",")));
-		return medicalCode;
+	private MedicalCodeVO getDrugNeoplasmHierarchy(Map<String, Object> m,String type) {		
+		MedicalCodeVO resultMedicalCode = null;
+		List<Map<String,Object>> resultMap = new ArrayList<>();
+		if (type == "neoplasm") {
+			resultMap = neoPlasmRepository.getParentChildList(Integer.valueOf(String.valueOf(m.get("id"))));
+		} else if (type == "drug") {
+			resultMap = drugRepository.getParentChildList(Integer.valueOf(String.valueOf(m.get("id"))));
+		}
+		for(int x = 0; x < resultMap.size(); x++) {
+			if(resultMedicalCode == null) {
+				resultMedicalCode = populateMedicalCode(m);
+			} else {
+				MedicalCodeVO medicalCode = populateMedicalCode(resultMap.get(x));
+				medicalCode.setChild(resultMedicalCode);
+				resultMedicalCode = medicalCode;
+			}
+		}
+		if(resultMedicalCode == null) {
+			resultMedicalCode = new MedicalCodeVO();
+		}
+		
+		return resultMedicalCode;
 	}
 
 	private EindexVO getParentChildHierarchy(Eindex eindex) {
@@ -151,5 +163,17 @@ public class CodeSearchService implements CodeSearchController {
 		eindexVo.setCode(String.valueOf(map.get("code")));
 		eindexVo.setNemod(String.valueOf(map.get("nemod")));
 		return eindexVo;
+	}
+	
+	private MedicalCodeVO populateMedicalCode(Map<String, Object> m) {
+		MedicalCodeVO medicalCode = new MedicalCodeVO();
+		medicalCode.setId(Integer.valueOf(String.valueOf(m.get("id"))));
+		medicalCode.setTitle(String.valueOf(m.get("title")));
+		medicalCode.setSee(String.valueOf(m.get("see")));
+		medicalCode.setSeealso(String.valueOf(m.get("seealso")));
+		medicalCode.setIsmainterm(Boolean.valueOf(String.valueOf(m.get("ismainterm"))));
+		medicalCode.setNemod(String.valueOf(m.get("nemod")));
+		medicalCode.setCode(Arrays.asList(String.valueOf(m.get("code")).split(",")));
+		return medicalCode;
 	}
 }

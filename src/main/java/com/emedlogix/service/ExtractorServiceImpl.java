@@ -379,7 +379,7 @@ public class ExtractorServiceImpl implements ExtractorService {
     }
 
 	@Override
-	public void doExtractNeoplasm() {
+	public void doExtractNeoplasm() {//icd10cm_neoplasm_2023.xml,test_neoplasm.xml
 		Object obj = parseXML("icd10cm_neoplasm_2023.xml", ICD10CMIndex.class);
 		if(obj instanceof ICD10CMIndex) {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
@@ -570,7 +570,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 	}
 
 	@Override
-	public void doExtractDrug() {
+	public void doExtractDrug() {//icd10cm_drug_2023.xml, test_drug.xml
 		Object obj = parseXML("icd10cm_drug_2023.xml", ICD10CMIndex.class);
 		if(obj instanceof ICD10CMIndex) {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
@@ -656,7 +656,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		Drug drug = new Drug();
 		drug.setTitle(a.getTitle().getContent().get(0).toString());
 		if(a.getTitle().getContent().size()>1) {
-			drug.setNemod(a.getTitle().getContent().get(1).toString());
+			drug.setNemod(getNemodVal(a.getTitle().getContent().get(1)));
 		}
 		drug.setSee(a.getSee());
 		drug.setSeealso(a.getSeeAlso());
