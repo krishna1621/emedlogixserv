@@ -34,9 +34,11 @@ import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
 import com.emedlogix.entity.Drug;
 import com.emedlogix.entity.DrugCode;
+import com.emedlogix.entity.DrugHierarchy;
 import com.emedlogix.entity.Eindex;
 import com.emedlogix.entity.NeoPlasmCode;
 import com.emedlogix.entity.Neoplasm;
+import com.emedlogix.entity.NeoplasmHierarchy;
 import com.emedlogix.entity.Notes;
 import com.emedlogix.entity.Section;
 import com.emedlogix.entity.SectionReference;
@@ -49,11 +51,13 @@ import com.emedlogix.index.Term;
 import com.emedlogix.repository.ChapterRepository;
 import com.emedlogix.repository.DBCodeDetailsRepository;
 import com.emedlogix.repository.DrugCodeRepository;
+import com.emedlogix.repository.DrugHierarchyRepository;
 import com.emedlogix.repository.DrugRepository;
 import com.emedlogix.repository.ESCodeInfoRepository;
 import com.emedlogix.repository.EindexRepository;
 import com.emedlogix.repository.NeoPlasmCodeRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
+import com.emedlogix.repository.NeoplasmHierarchyRepository;
 import com.emedlogix.repository.NotesRepository;
 import com.emedlogix.repository.SectionRepository;
 import com.emedlogix.repository.TermHierarchyRepository;
@@ -104,6 +108,12 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Autowired
     TermHierarchyRepository hierarchyRepository;
+
+    @Autowired
+    NeoplasmHierarchyRepository neoplasmHierarchyRepository;
+
+    @Autowired
+    DrugHierarchyRepository drugHierarchyRepository;
 
     private List<Section> parseSection(DiagnosisType diagnosisType, String version, String icdRef, String chapterId, List<Section> sections) throws JsonProcessingException {
         List<JAXBElement<?>> inclusionTermOrSevenChrNoteOrSevenChrDef = diagnosisType.getInclusionTermOrSevenChrNoteOrSevenChrDef();
@@ -376,6 +386,13 @@ public class ExtractorServiceImpl implements ExtractorService {
 			icd10CMIndex.getLetter().stream().forEach(l -> {
 				l.getMainTerm().stream().forEach(m -> {
 					final Neoplasm neoplasmOne = populateNeoPlasmMainTerm(m);
+
+					// store neoplasm hierarchy
+					List<Integer> ids = new ArrayList<>();
+					ids.add(neoplasmOne.getId());
+					saveNeoplasmHierarchy(neoplasmOne.getId(),neoplasmOne.getId(),0);
+
+					//store neoplasmcode
 					List<NeoPlasmCode> neoplasmCodes = new ArrayList<>();
 					m.getCell().stream().forEach(cell -> {
 						cell.getContent().stream().forEach( code -> {
@@ -385,7 +402,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 					neoPlasmCodeRepository.saveAll(neoplasmCodes);
 
 					if(!m.getTerm().isEmpty()) {
-						parseNeoPlasmLevelTerm(m.getTerm());
+						parseNeoPlasmLevelTerm(m.getTerm(),ids);
 					}
 				});
 			});
@@ -417,19 +434,36 @@ public class ExtractorServiceImpl implements ExtractorService {
 		return new Object();
 	}
 
-	private void parseNeoPlasmLevelTerm(List<Term> termType) {
+	private void parseNeoPlasmLevelTerm(List<Term> termType, List<Integer> ids) {
 		termType.forEach(a -> {
-			Neoplasm neoplasm = populateNeoPlasmLavelTerm(a);
-			final Neoplasm neoplasmOne = neoPlasmRepository.save(neoplasm);
+			final Neoplasm neoplasm = populateNeoPlasmLavelTerm(a);
+
+			//store hierarchy
+			if(a.getLevel() == ids.size()) {
+				ids.add(neoplasm.getId());
+			} else {
+				for (int i=ids.size()-1; i>=a.getLevel(); i--) {
+					ids.remove(i);
+				}
+				ids.add(neoplasm.getId());
+			}
+			int level = 0;
+			for (int i=ids.size()-1; i>=0; i--) {
+				saveNeoplasmHierarchy(ids.get(i),neoplasm.getId(),level);
+				level++;
+			}
+
+			//store neoplasmcode
 			List<NeoPlasmCode> neoplasmCodes = new ArrayList<>();
 			a.getCell().forEach(c -> {
 				c.getContent().stream().forEach( j -> {
-					populateNeoPlasmCode(neoplasmOne, neoplasmCodes, j);
+					populateNeoPlasmCode(neoplasm, neoplasmCodes, j);
 				});
 			});
 			neoPlasmCodeRepository.saveAll(neoplasmCodes);
+
 			if(!a.getTerm().isEmpty()) {
-				parseNeoPlasmLevelTerm(a.getTerm());
+				parseNeoPlasmLevelTerm(a.getTerm(),ids);
 			}
 		});
 	}
@@ -450,7 +484,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		neoplasm.setSee(a.getSee());
 		neoplasm.setSeealso(a.getSeeAlso());
 		neoplasm.setIsmainterm(false);
-		return neoplasm;
+		return neoPlasmRepository.save(neoplasm);
 	}
 
 	@Override
@@ -542,17 +576,23 @@ public class ExtractorServiceImpl implements ExtractorService {
 			ICD10CMIndex icd10CMIndex = (ICD10CMIndex)obj;
 			icd10CMIndex.getLetter().stream().forEach(l -> {
 				l.getMainTerm().stream().forEach(m -> {
-					final Drug drugResult = populateDrugMainTerm(m);
+					final Drug drug = populateDrugMainTerm(m);
+
+					//save neoplasm hierarchy
+					List<Integer> ids = new ArrayList<>();
+					ids.add(drug.getId());
+					populateAndSaveHierarchy(drug.getId(),drug.getId(),0);
+
 					List<DrugCode> drugCodes = new ArrayList<>();
 					m.getCell().stream().forEach(cell -> {
 						cell.getContent().stream().forEach( code -> {
-							populateDrugCode(drugResult, drugCodes, code);
+							populateDrugCode(drug, drugCodes, code);
 						});
 					});
 					drugCodeRepository.saveAll(drugCodes);
 
 					if(!m.getTerm().isEmpty()) {
-						parseDrugLevelTerm(m.getTerm());
+						parseDrugLevelTerm(m.getTerm(), ids);
 					}
 				});
 			});
@@ -578,19 +618,36 @@ public class ExtractorServiceImpl implements ExtractorService {
 		drugCodes.add(drugCode);
 	}
 
-	private void parseDrugLevelTerm(List<Term> termType) {
+	private void parseDrugLevelTerm(List<Term> termType, List<Integer> ids) {
 		termType.forEach(a -> {
-			Drug drug = populateDrugLevelTerm(a);
-			final Drug drugResult = drugRepository.save(drug);
+			final Drug drug = populateDrugLevelTerm(a);
+
+			//store drug hierarchy
+			if(a.getLevel() == ids.size()) {
+				ids.add(drug.getId());
+			} else {
+				for (int i=ids.size()-1; i>=a.getLevel(); i--) {
+					ids.remove(i);
+				}
+				ids.add(drug.getId());
+			}
+			int level = 0;
+			for (int i=ids.size()-1; i>=0; i--) {
+				saveNeoplasmHierarchy(ids.get(i),drug.getId(),level);
+				level++;
+			}
+
+			//save drug codes
 			List<DrugCode> drugCodes = new ArrayList<>();
 			a.getCell().forEach(c -> {
 				c.getContent().stream().forEach( j -> {
-					populateDrugCode(drugResult, drugCodes, j);
+					populateDrugCode(drug, drugCodes, j);
 				});
 			});
 			drugCodeRepository.saveAll(drugCodes);
+
 			if(!a.getTerm().isEmpty()) {
-				parseNeoPlasmLevelTerm(a.getTerm());
+				parseNeoPlasmLevelTerm(a.getTerm(), ids);
 			}
 		});
 	}
@@ -604,7 +661,7 @@ public class ExtractorServiceImpl implements ExtractorService {
 		drug.setSee(a.getSee());
 		drug.setSeealso(a.getSeeAlso());
 		drug.setIsmainterm(false);
-		return drug;
+		return drugRepository.save(drug);
 	}
 
     private String replaceDot(String input) {
@@ -620,6 +677,22 @@ public class ExtractorServiceImpl implements ExtractorService {
 			return element.getValue().toString();
 		}
 		return new String();
+	}
+
+	private void saveDrugHierarchy(Integer parentId,Integer childId, Integer level) {
+		DrugHierarchy drugHierarchy = new DrugHierarchy();
+		drugHierarchy.setParentId(parentId);
+		drugHierarchy.setChildId(childId);
+		drugHierarchy.setLevel(level);
+		drugHierarchyRepository.save(drugHierarchy);
+	}
+
+	private void saveNeoplasmHierarchy(Integer parentId,Integer childId, Integer level) {
+		NeoplasmHierarchy neoplasmHierarchy = new NeoplasmHierarchy();
+		neoplasmHierarchy.setParentId(parentId);
+		neoplasmHierarchy.setChildId(childId);
+		neoplasmHierarchy.setLevel(level);
+		neoplasmHierarchyRepository.save(neoplasmHierarchy);
 	}
 }
 
