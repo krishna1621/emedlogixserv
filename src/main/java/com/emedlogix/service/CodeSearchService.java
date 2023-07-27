@@ -28,72 +28,107 @@ import com.emedlogix.repository.ESCodeInfoRepository;
 import com.emedlogix.repository.EindexRepository;
 import com.emedlogix.repository.NeoPlasmRepository;
 import com.emedlogix.repository.SectionRepository;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 @Service
 public class CodeSearchService implements CodeSearchController {
 
-    public static final Logger logger = LoggerFactory.getLogger(CodeSearchService.class);
-    private static final String INDEX_NAME = "details";
-    private static final String FIELD_NAME = "code";
+	public static final Logger logger = LoggerFactory.getLogger(CodeSearchService.class);
+	private static final String INDEX_NAME = "details";
+	private static final String FIELD_NAME = "code";
 
-    @Autowired
-    ESCodeInfoRepository esCodeInfoRepository;
+	@Autowired
+	ESCodeInfoRepository esCodeInfoRepository;
 
-    @Autowired
-    DBCodeDetailsRepository dbCodeDetailsRepository;
-    @Autowired
-    SectionRepository sectionRepository;
-    @Autowired
-    ChapterRepository chapterRepository;
-    
-    @Autowired
-    NeoPlasmRepository neoPlasmRepository;
+	@Autowired
+	DBCodeDetailsRepository dbCodeDetailsRepository;
+	@Autowired
+	SectionRepository sectionRepository;
+	@Autowired
+	ChapterRepository chapterRepository;
 
-    @Autowired
-    DrugRepository drugRepository;
+	@Autowired
+	NeoPlasmRepository neoPlasmRepository;
 
-    @Autowired
-    EindexRepository eindexRepository;
+	@Autowired
+	DrugRepository drugRepository;
 
-    @Override
-    public CodeInfo getCodeInfo(String code) {
-        logger.info("Getting Code Information for:", code);
-        CodeInfo codeInfo = esCodeInfoRepository.getByCode(code);
-        return codeInfo;
-    }
+	@Autowired
+	EindexRepository eindexRepository;
 
-    public List<CodeInfo> getCodeInfoMatches(String code) {
-        logger.info("Getting Code Information for code starts with:", code);
-        List<CodeInfo> codeInfoList = new ArrayList<>();
-        Iterable<CodeInfo> codeDetailsIterable = esCodeInfoRepository.findByCodeStartingWith(code);
-        Iterator<CodeInfo> it = codeDetailsIterable.iterator();
-        while (it.hasNext()) {
-            CodeInfo codeInfo = it.next();
-            codeInfoList.add(codeInfo);
-        }
-        logger.info("Got matching codes size:", codeInfoList.size());
-        return codeInfoList;
-    }
+	@Override
+	public CodeInfo getCodeInfo(String code) {
+		logger.info("Getting Code Information for:", code);
+		CodeInfo codeInfo = esCodeInfoRepository.getByCode(code);
+		return codeInfo;
+	}
 
-    public CodeDetails getCodeInfoDetails(@PathVariable String code){
-        logger.info("Getting Code Information Details for code:", code);
-        CodeDetails codeDetails = dbCodeDetailsRepository.findByCode(code);
-        Section section = sectionRepository.findByCode(code);
-        if(section != null) {
-            codeDetails.setSection(section);
-            chapterRepository.findById(section.getChapterId()).ifPresent(value -> {
-                codeDetails.setChapter(value);
-            });
-        }
-        //codeDetails.setChapter(.get());
-        return codeDetails;
-    }
+	public List<CodeInfo> getCodeInfoMatches(String code) {
+		logger.info("Getting Code Information for code starts with:", code);
+		List<CodeInfo> codeInfoList = new ArrayList<>();
+		Iterable<CodeInfo> codeDetailsIterable = esCodeInfoRepository.findByCodeStartingWith(code);
+		Iterator<CodeInfo> it = codeDetailsIterable.iterator();
+		while (it.hasNext()) {
+			CodeInfo codeInfo = it.next();
+			codeInfoList.add(codeInfo);
+		}
+		logger.info("Got matching codes size:", codeInfoList.size());
+		return codeInfoList;
+	}
+
+	@Override
+	public List<CodeInfo> getCodeInfoDescription(String description) {
+		logger.info("Getting Code information Details for Description:",description);
+		List<CodeInfo> codeInfoList = new ArrayList<>();
+		Iterable<CodeInfo> codeInfoIterable = esCodeInfoRepository.findByDescriptionContains(description);
+		Iterator<CodeInfo> infoIterator = codeInfoIterable.iterator();
+		while (infoIterator.hasNext()){
+			CodeInfo codeInfo = infoIterator.next();
+			codeInfoList.add(codeInfo);
+		}
+		logger.info("Got description size :",codeInfoList.size());
+		return codeInfoList;
+	}
+
+	public CodeDetails getCodeInfoDetails(@PathVariable String code, @RequestParam String version){
+		logger.info("Getting Code Information Details for code:", code);
+		CodeDetails codeDetails = dbCodeDetailsRepository.findByCode(code);
+		Section section = sectionRepository.findByCodeAndVersion(code,version);
+		if(section != null) {
+			codeDetails.setSection(section);
+			chapterRepository.findById(section.getChapterId()).ifPresent(value -> {
+				codeDetails.setChapter(value);
+			});
+		}
+		//codeDetails.setChapter(.get());
+		return codeDetails;
+	}
 
 	@Override
 	public List<EindexVO> getEIndex(String code) {
 		return eindexRepository.findMainTermBySearch(code).stream().map(m -> {
 			return getParentChildHierarchy(m);
+		}).collect(Collectors.toList());
+	}
+
+
+
+
+
+	@Override
+	public List<EindexVO> getIndexDetails(){
+		List<Map<String,Object>> allIndexData = eindexRepository.findAllIndexData();
+		return allIndexData.stream().map(m -> {
+			return populateEindexVO(m);
+		}).collect(Collectors.toList());
+	}
+
+	@Override
+	public List<EindexVO> getIndexDetailsFilter(String filterBy){
+		List<Map<String,Object>> allIndexData = eindexRepository.filterIndexData(filterBy);
+		return allIndexData.stream().map(m->{
+			return populateEindexVO(m);
 		}).collect(Collectors.toList());
 	}
 
@@ -103,13 +138,27 @@ public class CodeSearchService implements CodeSearchController {
 			return populateMedicalCode(m);
 		}).collect(Collectors.toList());
 	}
-	
+
+	@Override
+	public List<MedicalCodeVO> getNeoplasmDetails(){
+		List<Map<String,Object>> allNeoplasmData = neoPlasmRepository.findAllNeoplasmData();
+		return  allNeoplasmData.stream().map(m -> {
+			return populateMedicalCode(m);
+		}).collect(Collectors.toList());
+	}
 	@Override
 	public List<MedicalCodeVO> getDrug(String code) {
 		return drugRepository.findDrugByCode(code).stream().map(m -> {
 			return populateMedicalCode(m);
 		}).collect(Collectors.toList());
 	}
+	public List<MedicalCodeVO> getDrugDetails(){
+		List<Map<String,Object>> allDrugData = drugRepository.findAllDrugData();
+		return allDrugData.stream().map(m -> {
+			return populateMedicalCode(m);
+		}).collect(Collectors.toList());
+	}
+
 
 	private MedicalCodeVO populateMedicalCode(Map<String, Object> m) {
 		MedicalCodeVO medicalCode = new MedicalCodeVO();

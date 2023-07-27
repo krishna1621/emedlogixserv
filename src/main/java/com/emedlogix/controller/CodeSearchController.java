@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.emedlogix.entity.CodeDetails;
 import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.Eindex;
 import com.emedlogix.entity.EindexVO;
 import com.emedlogix.entity.MedicalCodeVO;
+
 
 
 @RestController
@@ -25,12 +25,26 @@ public interface CodeSearchController {
     CodeInfo getCodeInfo(@PathVariable String code) throws IOException;
     @GetMapping("/{code}/matches")
     List<CodeInfo> getCodeInfoMatches(@PathVariable String code);
+    @GetMapping("/{description}/description")
+    List<CodeInfo> getCodeInfoDescription(@PathVariable String description);
     @GetMapping("/{code}/details")
-    CodeDetails getCodeInfoDetails(@PathVariable String code);
+    CodeDetails getCodeInfoDetails(@PathVariable String code, @RequestParam String version);
     @GetMapping("/{code}/index")
     List<EindexVO> getEIndex(@PathVariable String code);
     @GetMapping("/{code}/neoplasm")
     List<MedicalCodeVO> getNeoPlasm(@PathVariable String code);
     @GetMapping("/{code}/drug")
-	List<MedicalCodeVO> getDrug(@PathVariable String code);
+    List<MedicalCodeVO> getDrug(@PathVariable String code);
+
+
+    @GetMapping("/alldetails/index")
+    List<EindexVO> getIndexDetails();
+    @GetMapping("/alldetail/index")
+    List<EindexVO> getIndexDetailsFilter(@RequestParam("filterBy") String filterBy);
+    @GetMapping("/alldetails/neoplasm")
+    List<MedicalCodeVO> getNeoplasmDetails();
+    @GetMapping("/alldetails/drug")
+    List<MedicalCodeVO> getDrugDetails();
+
 }
+
