@@ -29,9 +29,12 @@ public interface CodeSearchController {
     List<MedicalCodeVO> getNeoPlasm(@PathVariable String code);
     @GetMapping("/{code}/drug")
 	List<MedicalCodeVO> getDrug(@PathVariable String code);
-    @GetMapping("/allDetails/neoplasm")
+
+    @GetMapping("/alldetails/index")
+    List<EindexVO> getIndexDetails();
+    @GetMapping("/alldetails/neoplasm")
     List<MedicalCodeVO> getNeoplasmDetails();
-    @GetMapping("/allDetails/drug")
+    @GetMapping("/alldetails/drug")
     List<MedicalCodeVO> getDrugDetails();
 
 }

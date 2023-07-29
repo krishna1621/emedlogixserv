@@ -21,4 +21,10 @@ public interface NeoPlasmRepository extends JpaRepository<Neoplasm, Integer> {
 	@Query(value = "SELECT t.parent_id as id,n.title as title,n.nemod as nemod,t.level as level,n.ismainterm as ismainterm "
 			+ "FROM neoplasm n join neoplasm_hierarchy t on t.parent_id=n.id where t.child_id = :id order by t.level asc", nativeQuery = true)
 	List<Map<String,Object>> getParentChildList(Integer id);
+
+	@Query(value = "SELECT n.id as id, n.title as title, n.see as see, n.seealso as seealso, n.nemod as nemod, n.ismainterm as ismainterm, GROUP_CONCAT(c.code) as code "
+			+ "FROM neoplasm n join neoplasm_code c on n.id=c.neoplasm_id "
+			+ "group by n.id", nativeQuery = true)
+	List<Map<String, Object>> findAllNeoplasmData();
+
 }

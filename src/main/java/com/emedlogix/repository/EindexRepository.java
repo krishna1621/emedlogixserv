@@ -18,4 +18,7 @@ public interface EindexRepository extends JpaRepository<Eindex, Integer> {
 	@Query(value = "SELECT t.parent_id as id,e.title as title,t.level as level,e.code as code,e.see as see,e.seealso as seealso,e.nemod as nemod,e.ismainterm as ismainterm from eindex e "
 			+ "join term_hierarchy t on t.parent_id=e.id where t.child_id = :id order by t.level asc", nativeQuery = true)
 	List<Map<String,Object>> getParentChildList(Integer id);
+
+	@Query(value = "SELECT * FROM eindex", nativeQuery = true)
+	List<Map<String, Object>> findAllIndexData();
 }

@@ -108,6 +108,14 @@ public class CodeSearchService implements CodeSearchController {
 	}
 
 	@Override
+	public List<EindexVO> getIndexDetails(){
+		List<Map<String,Object>> allIndexData = eindexRepository.findAllIndexData();
+		return allIndexData.stream().map(m -> {
+			return populateEindexVO(m);
+		}).collect(Collectors.toList());
+	}
+
+	@Override
 	public List<MedicalCodeVO> getNeoPlasm(String code) {
 		return neoPlasmRepository.findNeoplasmByCode(code).stream().map(m -> {
 			return getDrugNeoplasmHierarchy(m,"neoplasm");
