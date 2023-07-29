@@ -7,6 +7,7 @@ import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +24,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableElasticsearchRepositories(basePackages = "com.emedlogix")
 @ComponentScan(basePackages = {"com.emedlogix"})
 public class EmedlogixServApplication {
-
+    @Value("${elasticsearch.cluster-nodes}")
+    String elasticsearchEndpoint;
+    @Value("${elasticsearch.cluster-port}")
+    Integer elasticsearchPort;
     public static void main(String[] args) {
 
         SpringApplication.run(EmedlogixServApplication.class, args);
@@ -32,7 +36,7 @@ public class EmedlogixServApplication {
     @Bean(destroyMethod = "close")
     public RestHighLevelClient restClient() {
 
-        RestClientBuilder builder = RestClient.builder(new HttpHost("localhost", 9200, "http"))
+        RestClientBuilder builder = RestClient.builder(new HttpHost(elasticsearchEndpoint,elasticsearchPort, "http"))
                 // .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
                 .setDefaultHeaders(compatibilityHeaders());
         return new RestHighLevelClient(builder);
