@@ -1,0 +1,8 @@
+version: "3"
+services:
+  springboot-app:
+    image: springboot-emedlogix
+    restart: always
+    build: .
+    ports:
+      - 9000:8081
