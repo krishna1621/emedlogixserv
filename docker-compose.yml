@@ -1,7 +1,7 @@
 version: "3"
 services:
   springboot-app:
-    image: springboot-emedlogix
+    image: springboot-emedlogixserv
     restart: always
     build: .
     ports:
