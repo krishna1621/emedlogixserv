@@ -120,6 +120,7 @@
     </dependencies>
 
     <build>
+        <finalName>emedlogixserv</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -153,7 +154,6 @@
          </configuration>
      </plugin>
          </plugins>
-        <finalName>emedlogixserv</finalName>
      </build>
 
      <repositories>
