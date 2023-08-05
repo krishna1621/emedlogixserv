@@ -116,6 +116,13 @@ public class CodeSearchService implements CodeSearchController {
         }).collect(Collectors.toList());
     }
 
+    @Override
+    public List<EindexVO> filterByIndex(String filterBy){
+        List<Map<String,Object>> allIndexData = eindexRepository.findAllIndexData(filterBy);
+        return allIndexData.stream().map(m -> {
+            return populateEindexVO(m);
+        }).collect(Collectors.toList());
+    }
 
 
 	@Override
@@ -140,32 +147,6 @@ public class CodeSearchService implements CodeSearchController {
         }).collect(Collectors.toList());
     }
 
-/*
-    private MedicalCodeVO getParentChildHierarchyNeo(Neoplasm neoplasm){
-        MedicalCodeVO resultMedicalCodeVO = null;
-        List<Map<String,Object>> resultMap = neoPlasmRepository.getParentChildList(neoplasm.getId());
-        for (int x = 0; x < resultMap.size(); x++){
-            if (resultMedicalCodeVO == null) {
-                resultMedicalCodeVO = populateMedicalCodeNeo(resultMap.get(x));
-            } else {
-                MedicalCodeVO medicalCodeVO = populateMedicalCodeNeo(resultMap.get(x));
-                medicalCodeVO.setChild(resultMedicalCodeVO);
-                resultMedicalCodeVO = medicalCodeVO;
-            }
-        }
-        if (resultMedicalCodeVO == null) {
-            resultMedicalCodeVO = new MedicalCodeVO();
-        }
-        return resultMedicalCodeVO;
-    }
-    private MedicalCodeVO populateMedicalCodeNeo(Map<String, Object> map) {
-        MedicalCodeVO medicalCodeVO = new MedicalCodeVO();
-        medicalCodeVO.setId(Integer.parseInt(map.get("id").toString()));
-        medicalCodeVO.setTitle();
-    }
-
- */
-
 
 	@Override
 	public List<MedicalCodeVO> getDrug(String code) {
@@ -173,6 +154,13 @@ public class CodeSearchService implements CodeSearchController {
 			return getDrugNeoplasmHierarchy(m,"drug");
 		}).collect(Collectors.toList());
 	}
+
+    public List<MedicalCodeVO> getDrugDetails(){
+        List<Map<String,Object>> allDrugData = drugRepository.findAllDrugData();
+        return allDrugData.stream().map(m -> {
+            return populateMedicalCode(m);
+        }).collect(Collectors.toList());
+    }
 
 	private MedicalCodeVO getDrugNeoplasmHierarchy(Map<String, Object> m,String type) {		
 		MedicalCodeVO resultMedicalCode = null;

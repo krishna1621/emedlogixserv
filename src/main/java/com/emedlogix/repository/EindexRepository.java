@@ -25,6 +25,8 @@ public interface EindexRepository extends JpaRepository<Eindex, Integer> {
 	@Query(value ="SELECT * from eindex e",nativeQuery = true)
 	List<Map<String, Object>> findAllIndexData();
 
+	@Query(value ="SELECT * from eindex WHERE title LIKE :title%",nativeQuery = true)
+	List<Map<String, Object>> findAllIndexData(@Param("title") String title);
 
 
 }

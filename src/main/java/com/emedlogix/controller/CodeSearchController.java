@@ -18,11 +18,13 @@ public interface CodeSearchController {
 
     @GetMapping("/{code}/search")
     CodeInfo getCodeInfo(@PathVariable String code) throws IOException;
+
     @GetMapping("/{code}/matches")
     List<CodeInfo> getCodeInfoMatches(@PathVariable String code);
 
     @GetMapping("/{description}/description")
     List<CodeInfo> getCodeInfoDescription(@PathVariable String description);
+
     @GetMapping("/{code}/details")
     CodeDetails getCodeInfoDetails(@PathVariable String code, @RequestParam("version") String version);
 
@@ -32,16 +34,22 @@ public interface CodeSearchController {
     @GetMapping("/alldetails/index")
     List<EindexVO> getIndexDetails();
 
+    @GetMapping("/filterby/index")
+    List<EindexVO> filterByIndex(@RequestParam("filterBy") String filterBy);
+
     @GetMapping("/{code}/neoplasm")
     List<MedicalCodeVO> getNeoPlasm(@PathVariable String code);
 
     @GetMapping("/alldetails/neoplasm")
     List<MedicalCodeVO> getNeoplasmDetails();
+
     @GetMapping("/filterby/neoplasm")
     List<MedicalCodeVO> filterNeoplasmDetails(@RequestParam("filterBy") String filterBy);
 
     @GetMapping("/{code}/drug")
-	List<MedicalCodeVO> getDrug(@PathVariable String code);
+    List<MedicalCodeVO> getDrug(@PathVariable String code);
 
+    @GetMapping("/alldetails/drug")
+    List<MedicalCodeVO> getDrugDetails();
 
 }
