@@ -23,14 +23,14 @@ public class ExtractorScheduler {
     @PostConstruct
     public void doExtractOderCode() {
         logger.info("Extractor Service has been initiated for Ordered Codes...");
-       //extractorService.doExtractOrderedCodes();
+      // extractorService.doExtractOrderedCodes();
         logger.info("Extractor Service Ordered Codes completed...");
     }
     
     @PostConstruct
     public void doExtractIndex() {
         logger.info("Extractor Service has been initiated for Eindex Codes...");
-       // extractorService.doExtractIndex();
+      //  extractorService.doExtractIndex();
         logger.info("Extractor Service Eindex Codes completed...");
     }
     
@@ -44,7 +44,7 @@ public class ExtractorScheduler {
     @PostConstruct
     public void doExtractDrug() {
         logger.info("Extractor Service has been initiated for Drug Codes...");
-       // extractorService.doExtractDrug();
+      //  extractorService.doExtractDrug();
         logger.info("Extractor Service Drug Codes completed...");
     }
 }
