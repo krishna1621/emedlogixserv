@@ -16,6 +16,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
 @EnableScheduling
@@ -28,6 +30,7 @@ public class EmedlogixServApplication {
     String elsaticsearchEndpoint;
     @Value("${elasticsearch.cluster-port}")
     Integer elasticsearchport;
+
     public static void main(String[] args) {
 
         SpringApplication.run(EmedlogixServApplication.class, args);
@@ -46,5 +49,6 @@ public class EmedlogixServApplication {
         return new Header[]{new BasicHeader(HttpHeaders.ACCEPT, "application/json;compatible-with=7"),
                 new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json;compatible-with=7")};
     }
+
 
 }

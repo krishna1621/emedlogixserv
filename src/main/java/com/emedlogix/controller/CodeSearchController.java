@@ -23,6 +23,7 @@ public interface CodeSearchController {
     List<CodeInfo> getCodeInfoDescription(@PathVariable String description);
     @GetMapping("/{code}/details")
     CodeDetails getCodeInfoDetails(@PathVariable String code, @RequestParam String version);
+
     @GetMapping("/{code}/index")
     List<EindexVO> getEIndex(@PathVariable String code);
     @GetMapping("/{code}/neoplasm")
