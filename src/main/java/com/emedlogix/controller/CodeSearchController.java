@@ -4,11 +4,8 @@ package com.emedlogix.controller;
 import java.io.IOException;
 import java.util.List;
 
+import com.emedlogix.entity.*;
 import org.springframework.web.bind.annotation.*;
-import com.emedlogix.entity.CodeDetails;
-import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.EindexVO;
-import com.emedlogix.entity.MedicalCodeVO;
 
 
 @RestController
@@ -32,10 +29,16 @@ public interface CodeSearchController {
 	List<MedicalCodeVO> getDrug(@PathVariable String code);
 
     @GetMapping("/alldetails/index")
-    List<EindexVO> getIndexDetails();
+    List<Eindex> getIndexDetails();
     @GetMapping("/alldetails/neoplasm")
     List<MedicalCodeVO> getNeoplasmDetails();
     @GetMapping("/alldetails/drug")
     List<MedicalCodeVO> getDrugDetails();
+
+    @GetMapping("/mainterm")
+    void getLevelTerms();
+
+    @GetMapping("/title/{title}")
+    EindexLevels getSearchTerm(@PathVariable String title);
 
 }

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.emedlogix.entity.*;
+import com.emedlogix.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.emedlogix.controller.CodeSearchController;
-import com.emedlogix.repository.ChapterRepository;
-import com.emedlogix.repository.DBCodeDetailsRepository;
-import com.emedlogix.repository.DrugRepository;
-import com.emedlogix.repository.ESCodeInfoRepository;
-import com.emedlogix.repository.EindexRepository;
-import com.emedlogix.repository.NeoPlasmRepository;
-import com.emedlogix.repository.SectionRepository;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -35,6 +29,12 @@ public class CodeSearchService implements CodeSearchController {
 
     @Autowired
     ESCodeInfoRepository esCodeInfoRepository;
+
+	@Autowired
+	ESIndexLevelSearchRepository esIndexLevelSearchRepository;
+
+	@Autowired
+	ESIndexLoad esIndexLoad;
 
     @Autowired
     DBCodeDetailsRepository dbCodeDetailsRepository;
@@ -108,11 +108,14 @@ public class CodeSearchService implements CodeSearchController {
 	}
 
 	@Override
-	public List<EindexVO> getIndexDetails(){
-		List<Map<String,Object>> allIndexData = eindexRepository.findAllIndexData();
+	public List<Eindex> getIndexDetails(){
+	/*	List<Map<String,Object>> allIndexData = eindexRepository.findAllIndexData();
 		return allIndexData.stream().map(m -> {
 			return populateEindexVO(m);
 		}).collect(Collectors.toList());
+
+	 */
+		return eindexRepository.findAll();
 	}
 
 	@Override
@@ -140,6 +143,18 @@ public class CodeSearchService implements CodeSearchController {
 		return allDrugData.stream().map(m -> {
 			return populateMedicalCode(m);
 		}).collect(Collectors.toList());
+	}
+
+	@Override
+	public void getLevelTerms() {
+
+		 esIndexLoad.loadIndexMainTerm();
+	}
+
+	@Override
+	public EindexLevels getSearchTerm(String title) {
+
+		return esIndexLevelSearchRepository.getByTitle(title);
 	}
 
 
