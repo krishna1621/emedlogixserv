@@ -32,10 +32,13 @@ public interface CodeSearchController {
     List<EindexVO> getEIndex(@PathVariable String code);
 
     @GetMapping("/alldetails/index")
-    List<EindexVO> getIndexDetails();
+    List<Eindex> getIndexDetails();
 
-    @GetMapping("/filterby/index")
-    List<EindexVO> filterByIndex(@RequestParam("filterBy") String filterBy);
+    @GetMapping("/description")
+    List<CodeInfo> getDescriptionDetails(@RequestParam("keywords") String sortBy);
+
+    @GetMapping("/alldetails/index/title")
+    List<Eindex> getIndexDetailsByTitleStartingWith(@RequestParam String filterBy);
 
     @GetMapping("/{code}/neoplasm")
     List<MedicalCodeVO> getNeoPlasm(@PathVariable String code);
@@ -51,5 +54,15 @@ public interface CodeSearchController {
 
     @GetMapping("/alldetails/drug")
     List<MedicalCodeVO> getDrugDetails();
+
+    @GetMapping("/mainterm")
+    void getLevelTerms();
+
+    @GetMapping("/title/{title}")
+    EindexLevels getSearchTerm(@PathVariable String title);
+
+    @GetMapping("/index/search/name")
+    List<EindexVO> getEIndexByNameSearch(@RequestParam(required = true,value = "name") String name,
+                                         @RequestParam(required = false,value = "mainTermSearch",defaultValue = "true") boolean mainTermSearch);
 
 }

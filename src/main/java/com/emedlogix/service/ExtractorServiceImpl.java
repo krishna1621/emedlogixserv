@@ -13,6 +13,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.UUID;
 
+import com.emedlogix.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,19 +49,6 @@ import com.emedlogix.entity.VisualImpairment;
 import com.emedlogix.index.ICD10CMIndex;
 import com.emedlogix.index.MainTerm;
 import com.emedlogix.index.Term;
-import com.emedlogix.repository.ChapterRepository;
-import com.emedlogix.repository.DBCodeDetailsRepository;
-import com.emedlogix.repository.DrugCodeRepository;
-import com.emedlogix.repository.DrugHierarchyRepository;
-import com.emedlogix.repository.DrugRepository;
-import com.emedlogix.repository.ESCodeInfoRepository;
-import com.emedlogix.repository.EindexRepository;
-import com.emedlogix.repository.NeoPlasmCodeRepository;
-import com.emedlogix.repository.NeoPlasmRepository;
-import com.emedlogix.repository.NeoplasmHierarchyRepository;
-import com.emedlogix.repository.NotesRepository;
-import com.emedlogix.repository.SectionRepository;
-import com.emedlogix.repository.TermHierarchyRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -90,6 +78,8 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Autowired
     NotesRepository notesRepository;
+
+
 
     @Autowired
     EindexRepository eindexRepository;
@@ -496,8 +486,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Override
     public void doExtractIndex() {//test_index.xml, icd10cm_index_2023.xml,icd10cm_eindex_2023.xml
-        parseIndexesFile(parseXML("icd10cm_eindex_2023.xml", ICD10CMIndex.class));
         parseIndexesFile(parseXML("icd10cm_index_2023.xml", ICD10CMIndex.class));
+        parseIndexesFile(parseXML("icd10cm_eindex_2023.xml", ICD10CMIndex.class));
+
     }
 
     private void parseIndexesFile(Object obj) {
@@ -529,6 +520,7 @@ public class ExtractorServiceImpl implements ExtractorService {
         eIndex.setSeecat(m.getSeecat());
         eIndex.setIsmainterm(true);
         return eindexRepository.save(eIndex);
+
     }
 
     private void populateAndSaveHierarchy(Integer parentId, Integer childId, Integer level) {
@@ -702,5 +694,3 @@ public class ExtractorServiceImpl implements ExtractorService {
         neoplasmHierarchyRepository.save(neoplasmHierarchy);
     }
 }
-
-
