@@ -489,8 +489,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 
 	@Override
 	public void doExtractIndex() {//test_index.xml, icd10cm_index_2023.xml,icd10cm_eindex_2023.xml
+        parseIndexesFile(parseXML("icd10cm_index_2023.xml",ICD10CMIndex.class));
 		parseIndexesFile(parseXML("icd10cm_eindex_2023.xml",ICD10CMIndex.class));
-		parseIndexesFile(parseXML("icd10cm_index_2023.xml",ICD10CMIndex.class));
+
 	}
 
 	private void parseIndexesFile(Object obj) {

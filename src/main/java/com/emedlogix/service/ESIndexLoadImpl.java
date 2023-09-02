@@ -28,7 +28,7 @@ public class ESIndexLoadImpl implements ESIndexLoad {
        for (Eindex eindex : eindexList){
            EindexLevels eindexVO = getParentChildHierarchy(eindex.getId(),eindex.getTitle());
            eindexLevels.add(eindexVO);
-           if (eindexLevels.size() >= 1000){
+           if (eindexLevels.size() >= 10000){
                esIndexLevelSearchRepository.saveAll(eindexLevels);
                eindexLevels.clear();
            }

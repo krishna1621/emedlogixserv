@@ -35,10 +35,17 @@ public interface CodeSearchController {
     @GetMapping("/alldetails/drug")
     List<MedicalCodeVO> getDrugDetails();
 
+    @GetMapping("/alldetails/index/title")
+    List<Eindex> getIndexDetailsByTitleStartingWith(@RequestParam String filterBy);
+
     @GetMapping("/mainterm")
     void getLevelTerms();
 
     @GetMapping("/title/{title}")
     EindexLevels getSearchTerm(@PathVariable String title);
+
+    @GetMapping("/index/search/name")
+    List<EindexVO> getEIndexByNameSearch(@RequestParam(required = true,value = "name") String name,
+                                         @RequestParam(required = false,value = "mainTermSearch",defaultValue = "true") boolean mainTermSearch);
 
 }

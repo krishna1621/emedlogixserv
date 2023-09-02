@@ -1,15 +1,13 @@
 package com.emedlogix.service;
 
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.emedlogix.entity.*;
 import com.emedlogix.repository.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +22,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class CodeSearchService implements CodeSearchController {
 
     public static final Logger logger = LoggerFactory.getLogger(CodeSearchService.class);
-    private static final String INDEX_NAME = "details";
-    private static final String FIELD_NAME = "code";
+
+
+	private static final String INDEX_NAME = "details";
+	private Map<String,Object> indexMap = null;
+	private String code = null;
+	private static final String FIELD_NAME = "code";
 
     @Autowired
     ESCodeInfoRepository esCodeInfoRepository;
@@ -138,11 +140,18 @@ public class CodeSearchService implements CodeSearchController {
 			return getDrugNeoplasmHierarchy(m,"drug");
 		}).collect(Collectors.toList());
 	}
+
+
 	public List<MedicalCodeVO> getDrugDetails(){
 		List<Map<String,Object>> allDrugData = drugRepository.findAllDrugData();
 		return allDrugData.stream().map(m -> {
 			return populateMedicalCode(m);
 		}).collect(Collectors.toList());
+	}
+
+	@Override
+	public List<Eindex> getIndexDetailsByTitleStartingWith(String filterBy) {
+			return eindexRepository.findByTitleStartingWith(filterBy);
 	}
 
 	@Override
@@ -155,6 +164,77 @@ public class CodeSearchService implements CodeSearchController {
 	public EindexLevels getSearchTerm(String title) {
 
 		return esIndexLevelSearchRepository.getByTitle(title);
+	}
+
+	@Override
+	public List<EindexVO> getEIndexByNameSearch(String name,boolean mainTermSearch) {
+		String[] names = name.trim().split(" ");
+		if(names.length>1 && names.length == 2) {
+			if(mainTermSearch) {
+				return multipleMainTermSearch(names);
+			} else {
+
+			}
+			return null;
+		} else {
+			if(mainTermSearch) {
+				return singleMainTermSearch(names[0]);
+			} else {
+				return singleLevelTermSearch(names[0]);
+			}
+		}
+	}
+
+	private List<EindexVO> multipleMainTermSearch(String[] names) {
+		List<Eindex> mainTermResult = eindexRepository.findMainTerm(names[0]);
+		List<String> mainTermsTitle = new ArrayList<>();
+		mainTermResult.forEach( e -> {
+			getMainTermsTitle(e,mainTermsTitle);
+		});
+		if(mainTermsTitle.size()>0) {
+			return eindexRepository.findSecondMainTermLevel(mainTermsTitle,names[1]).stream().map(i -> {
+				ObjectMapper mapper = new ObjectMapper();
+				Map<String, Object> map = mapper.convertValue(i, new TypeReference<Map<String, Object>>() {});
+				return populateEindexVO(map);
+			}).collect(Collectors.toList());
+		} else {
+
+		}
+		return null;
+	}
+
+	private void getMainTermsTitle(Eindex eindex,List<String> mainTermsTitle){
+		if(eindex.getSee()!=null) {
+			mainTermsTitle.addAll(Arrays.asList(eindex.getSee().split(",")));
+		}
+		if(eindex.getSeealso()!=null) {
+			mainTermsTitle.addAll(Arrays.asList(eindex.getSeealso().split(",")));
+		}
+	}
+
+	private List<EindexVO> singleLevelTermSearch(String name) {
+		List<EindexVO> indexList = new ArrayList<>();
+		eindexRepository.searchLevelTermMainTerm(name).forEach(map -> {
+			if(indexMap!=null && indexMap.get("childId")!=map.get("childId")) {
+				indexList.add(populateEindexVO(indexMap,code));
+				code = null;
+			}
+			indexMap = map;
+			if(map.get("code")!=null) {
+				code = map.get("childId").toString();
+			}
+		});
+		indexList.add(populateEindexVO(indexMap,code));
+		indexList.sort(Comparator.comparing(m -> m.getTitle(),
+				Comparator.nullsLast(Comparator.naturalOrder())
+		));
+		return indexList;
+	}
+
+	private List<EindexVO> singleMainTermSearch(String name) {
+		return eindexRepository.searchMainTermLevelOne(name).stream().map(m -> {
+			return populateEindexVO(m);
+		}).collect(Collectors.toList());
 	}
 
 
@@ -209,6 +289,14 @@ public class CodeSearchService implements CodeSearchController {
 		eindexVo.setIsmainterm(Boolean.valueOf(map.get("ismainterm").toString()));
 		eindexVo.setCode(String.valueOf(map.get("code")));
 		eindexVo.setNemod(String.valueOf(map.get("nemod")));
+		return eindexVo;
+	}
+
+	private EindexVO populateEindexVO(Map<String,Object> map,String code) {
+		EindexVO eindexVo = populateEindexVO(map);
+		if(code!=null) {
+			eindexVo.setCode(code);
+		}
 		return eindexVo;
 	}
 	
