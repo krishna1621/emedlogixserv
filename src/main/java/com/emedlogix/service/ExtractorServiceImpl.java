@@ -4,15 +4,12 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
+import com.emedlogix.entity.*;
+
+import com.emedlogix.repository.*;
+import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,39 +25,9 @@ import com.emedlogix.codes.NoteType;
 import com.emedlogix.codes.SectionIndexType;
 import com.emedlogix.codes.SectionType;
 import com.emedlogix.codes.VisualImpairmentType;
-import com.emedlogix.entity.Category;
-import com.emedlogix.entity.Chapter;
-import com.emedlogix.entity.CodeDetails;
-import com.emedlogix.entity.CodeInfo;
-import com.emedlogix.entity.Drug;
-import com.emedlogix.entity.DrugCode;
-import com.emedlogix.entity.DrugHierarchy;
-import com.emedlogix.entity.Eindex;
-import com.emedlogix.entity.NeoPlasmCode;
-import com.emedlogix.entity.Neoplasm;
-import com.emedlogix.entity.NeoplasmHierarchy;
-import com.emedlogix.entity.Notes;
-import com.emedlogix.entity.Section;
-import com.emedlogix.entity.SectionReference;
-import com.emedlogix.entity.TermHierarchy;
-import com.emedlogix.entity.VisRange;
-import com.emedlogix.entity.VisualImpairment;
 import com.emedlogix.index.ICD10CMIndex;
 import com.emedlogix.index.MainTerm;
 import com.emedlogix.index.Term;
-import com.emedlogix.repository.ChapterRepository;
-import com.emedlogix.repository.DBCodeDetailsRepository;
-import com.emedlogix.repository.DrugCodeRepository;
-import com.emedlogix.repository.DrugHierarchyRepository;
-import com.emedlogix.repository.DrugRepository;
-import com.emedlogix.repository.ESCodeInfoRepository;
-import com.emedlogix.repository.EindexRepository;
-import com.emedlogix.repository.NeoPlasmCodeRepository;
-import com.emedlogix.repository.NeoPlasmRepository;
-import com.emedlogix.repository.NeoplasmHierarchyRepository;
-import com.emedlogix.repository.NotesRepository;
-import com.emedlogix.repository.SectionRepository;
-import com.emedlogix.repository.TermHierarchyRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -114,6 +81,9 @@ public class ExtractorServiceImpl implements ExtractorService {
 
     @Autowired
     DrugHierarchyRepository drugHierarchyRepository;
+
+    @Autowired
+    ESAlterTermRepository esAlterTermRepository;
 
     private List<Section> parseSection(DiagnosisType diagnosisType, String version, String icdRef, String chapterId, List<Section> sections) throws JsonProcessingException {
         List<JAXBElement<?>> inclusionTermOrSevenChrNoteOrSevenChrDef = diagnosisType.getInclusionTermOrSevenChrNoteOrSevenChrDef();
@@ -600,7 +570,89 @@ public class ExtractorServiceImpl implements ExtractorService {
 		}
 	}
 
-	private Drug populateDrugMainTerm(MainTerm m) {
+    @Override
+    public void doExtractAlterTermXLSX() {
+        /*
+        ClassPathResource resource = new ClassPathResource("Alternate-Terms-2023.xlsx");
+        // Set the batch size
+        int batchSize = 1000;
+        List<AlterTerm> batch = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(resource.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0); // Assuming data is in the first sheet
+            for (Row row : sheet) {
+                Cell codeCell = row.getCell(0); // Assuming code is in the first column (0-indexed)
+                Cell descriptionCell = row.getCell(1); // Assuming description is in the second column (0-indexed)
+                if (codeCell != null && descriptionCell != null) {
+                    String code = codeCell.getStringCellValue();
+                    String description = descriptionCell.getStringCellValue();
+                    AlterTerm alterTerm = new AlterTerm();
+                    alterTerm.setCode(code);
+                    alterTerm.setAlterDescription(description);
+                    batch.add(alterTerm);
+                    // Check if the batch size has been reached, then index the batch
+                    if (batch.size() >= batchSize) {
+                        esAlterTermRepository.saveAll(batch);
+                        batch.clear();
+                    }
+                }
+            }
+            // Index any remaining documents
+            if (!batch.isEmpty()) {
+                esAlterTermRepository.saveAll(batch);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+         */
+        ClassPathResource resource = new ClassPathResource("Alternate-Terms-2023.xlsx");
+        int batchSize = 1000;
+        List<AlterTerm> batch = new ArrayList<>();
+
+        try (Workbook workbook = WorkbookFactory.create(resource.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (Row row : sheet) {
+                Cell codeCell = row.getCell(0);
+                Cell descriptionCell = row.getCell(1);
+
+                if (codeCell != null && descriptionCell != null) {
+                    String code = codeCell.getStringCellValue();
+                    String description = descriptionCell.getStringCellValue();
+
+                    // Check if a document with the same code already exists in Elasticsearch
+                    Optional<AlterTerm> existingTerm = esAlterTermRepository.findByCode(code);
+
+                    if (!existingTerm.isPresent()) {
+                        AlterTerm alterTerm = new AlterTerm();
+                        alterTerm.setCode(code);
+                        alterTerm.setAlterDescription(description);
+                        batch.add(alterTerm);
+
+                        if (batch.size() >= batchSize) {
+                            esAlterTermRepository.saveAll(batch);
+                            batch.clear();
+                        }
+                    }
+                }
+            }
+
+            if (!batch.isEmpty()) {
+                esAlterTermRepository.saveAll(batch);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
+    private Drug populateDrugMainTerm(MainTerm m) {
 		Drug drug = new Drug();
 		drug.setTitle(m.getTitle().getContent().get(0).toString());
 		if(m.getTitle().getContent().size()>1) {

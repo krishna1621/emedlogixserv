@@ -40,6 +40,8 @@ public class EmedlogixServApplication {
     public RestHighLevelClient restClient() {
 
         RestClientBuilder builder = RestClient.builder(new HttpHost(elsaticsearchEndpoint,elasticsearchport, "http"))
+                .setRequestConfigCallback(requestConfigBuilder ->
+                        requestConfigBuilder.setSocketTimeout(60000))
                 // .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
                 .setDefaultHeaders(compatibilityHeaders());
         return new RestHighLevelClient(builder);

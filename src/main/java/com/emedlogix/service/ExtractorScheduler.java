@@ -47,4 +47,11 @@ public class ExtractorScheduler {
        // extractorService.doExtractDrug();
         logger.info("Extractor Service Drug Codes completed...");
     }
+
+    @PostConstruct
+    public void doExtractAlterTermXLSX() {
+        logger.info("Extractor Service has been initiated for AlterTerms Codes...");
+        // extractorService.doExtractAlterTermXLSX();
+        logger.info("Extractor Service AlterTerms Codes completed...");
+    }
 }
